@@ -1,0 +1,28 @@
+package com.uni.ethesis.data.entities;
+
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
+import java.time.OffsetDateTime;
+
+@Entity
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@SuperBuilder
+public class DepartmentAppointment extends BaseEntity{
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    // This defines the Many-to-One relationship to the Department entity.
+    // Many appointments can be made for one department (over time).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
+    @Column(name = "start_date")
+    private OffsetDateTime startDate;
+    @Column(name = "end_date")
+    private OffsetDateTime endDate;
+}

@@ -1,7 +1,10 @@
 package com.uni.ethesis.data.entities;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.OffsetDateTime;
@@ -12,7 +15,8 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
-public class DepartmentAppointment extends BaseEntity{
+@Table(name = "department_appointments")
+public class DepartmentAppointment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

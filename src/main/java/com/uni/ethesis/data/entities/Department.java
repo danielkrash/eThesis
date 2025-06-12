@@ -1,9 +1,6 @@
 package com.uni.ethesis.data.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,11 +16,16 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
+@Table(name = "departments")
 public class Department extends BaseEntity {
+    @Column(columnDefinition = "text")
     private String name;
+    @Column(columnDefinition = "text")
     private String description;
-    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<DepartmentAppointment> appointments = new HashSet<>();
-    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<UserInDepartment> users = new HashSet<>();
+    @OneToMany(mappedBy = "department", orphanRemoval = false)
+    private Set<DepartmentAppointment> appointments;
+    @OneToMany(mappedBy = "department", orphanRemoval = false)
+    private Set<UserInDepartment> users;
+    @OneToMany(mappedBy = "department", orphanRemoval = false)
+    private Set<DepartmentDefense> defenses;
 }

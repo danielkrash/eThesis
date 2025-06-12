@@ -4,6 +4,5 @@ public enum ThesisProposalStatus
 {
     PENDING,
     APPROVED,
-    REJECTED,
-    DEFENDED
+    REJECTED
 }

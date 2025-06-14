@@ -1,9 +1,6 @@
 package com.uni.ethesis.data.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,12 +15,12 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Table(name = "users_in_departments")
 public class UserInDepartment extends BaseEntity {
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     // This defines the Many-to-One relationship to the Department entity.
     // Many appointments can be made for one department (over time).
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 }

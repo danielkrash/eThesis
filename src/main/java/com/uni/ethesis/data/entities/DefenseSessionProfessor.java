@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import lombok.Builder; // Added for @Builder.Default
 
 @Entity
 @Getter
@@ -19,7 +20,8 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "defense_session_professors")
 public class DefenseSessionProfessor extends AuditableEntity {
     @EmbeddedId
-    private DefenseSessionProfessorKey id;
+    @Builder.Default // Ensures the ID is initialized even with SuperBuilder
+    private DefenseSessionProfessorKey id = new DefenseSessionProfessorKey(); // Initialize the embedded ID
     @ManyToOne
     @MapsId("defenseSessionId")
     @JoinColumn(name = "defense_session_id")

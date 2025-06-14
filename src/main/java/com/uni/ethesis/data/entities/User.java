@@ -2,11 +2,12 @@ package com.uni.ethesis.data.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Fetch;
+import org.springframework.data.repository.cdi.Eager;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @AllArgsConstructor
@@ -14,6 +15,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Table(name = "users")
+@SuperBuilder
 @Entity
 public class User extends BaseEntity {
     @Column(name = "first_name" , columnDefinition = "text")
@@ -23,9 +25,9 @@ public class User extends BaseEntity {
     @Column(unique = true, name = "email" , columnDefinition = "text")
     @Email(message = "Email should be valid")
     private String email;
-    @OneToMany(mappedBy = "user", orphanRemoval = false)
+    @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY)
     private Set<DepartmentAppointment> appointments;
-    @OneToMany(mappedBy = "user", orphanRemoval = false)
+    @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY)
     private Set<UserInDepartment> departments;
     @OneToOne(mappedBy = "user" , orphanRemoval = false)
     @PrimaryKeyJoinColumn
@@ -36,3 +38,4 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", orphanRemoval = false)
     private Set<Comment> comments;
 }
+

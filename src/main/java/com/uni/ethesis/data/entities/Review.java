@@ -2,10 +2,8 @@ package com.uni.ethesis.data.entities;
 
 import com.uni.ethesis.enums.ReviewConclusion;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.Set;
 
@@ -14,6 +12,7 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@SuperBuilder
 @Table(name = "reviews")
 public class Review extends BaseEntity {
     @Column(columnDefinition = "text", nullable = false)

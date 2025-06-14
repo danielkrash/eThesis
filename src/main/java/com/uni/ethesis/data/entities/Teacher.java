@@ -18,7 +18,7 @@ import java.util.Set;
 @SuperBuilder
 @Table(name = "teachers")
 public class Teacher extends BaseEntity {
-    @OneToOne
+    @OneToOne(fetch =  FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "id")
     private User user;

@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Check;
 
 import java.util.Set;
 
@@ -20,8 +21,9 @@ import java.util.Set;
 @Table(name = "students", indexes = {
         @Index(name = "idx_student_university_id", columnList = "universityId", unique = true)
 })
+@Check(constraints = "university_id ~* '^f[0-9]{6}$'")
 public class Student extends BaseEntity {
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @MapsId
     @JoinColumn(name = "id")
     private User user;

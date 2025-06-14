@@ -1,11 +1,11 @@
 package com.uni.ethesis.data.dto;
 
-import jakarta.validation.constraints.Email;
-import lombok.Data;
-
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+
+import jakarta.validation.constraints.Email;
+import lombok.Data;
 
 /**
  * DTO for {@link com.uni.ethesis.data.entities.User}

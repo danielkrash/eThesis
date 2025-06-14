@@ -1,20 +1,39 @@
 package com.uni.ethesis.unit.repository.config;
 
-import com.uni.ethesis.data.entities.*;
-import com.uni.ethesis.enums.*;
-import jakarta.persistence.EntityManager;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import com.uni.ethesis.data.entities.Comment;
+import com.uni.ethesis.data.entities.Defense;
+import com.uni.ethesis.data.entities.DefenseSession;
+import com.uni.ethesis.data.entities.DefenseSessionProfessor;
+import com.uni.ethesis.data.entities.Department;
+import com.uni.ethesis.data.entities.DepartmentAppointment;
+import com.uni.ethesis.data.entities.DepartmentDefense;
+import com.uni.ethesis.data.entities.Review;
+import com.uni.ethesis.data.entities.Student;
+import com.uni.ethesis.data.entities.Teacher;
+import com.uni.ethesis.data.entities.Thesis;
+import com.uni.ethesis.data.entities.ThesisProposal;
+import com.uni.ethesis.data.entities.User;
+import com.uni.ethesis.data.entities.UserInDepartment;
+import com.uni.ethesis.enums.ReviewConclusion;
+import com.uni.ethesis.enums.StudentType;
+import com.uni.ethesis.enums.TeacherPosition;
+import com.uni.ethesis.enums.ThesisProposalStatus;
+import com.uni.ethesis.enums.ThesisStatus;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class TestDataPopulator {
     private static final OffsetDateTime NOW = OffsetDateTime.now(ZoneOffset.UTC);
     private User userAlice, userBob, userCarlos, userCarol, userDave, userEva, userFrank;
@@ -32,454 +51,6 @@ public class TestDataPopulator {
     private DepartmentAppointment app1, app2, app3, app4;
     private DepartmentDefense dhd1, dhd2, dhd3, dhd4 , dhd5;
     private UserInDepartment uid1, uid2, uid3, uid4, uid5, uid6 , uid7;
-
-    public User getUserAlice() {
-        return userAlice;
-    }
-
-    public void setUserAlice(User userAlice) {
-        this.userAlice = userAlice;
-    }
-
-    public User getUserBob() {
-        return userBob;
-    }
-
-    public void setUserBob(User userBob) {
-        this.userBob = userBob;
-    }
-
-    public User getUserCarlos() {
-        return userCarlos;
-    }
-
-    public void setUserCarlos(User userCarlos) {
-        this.userCarlos = userCarlos;
-    }
-
-    public User getUserCarol() {
-        return userCarol;
-    }
-
-    public void setUserCarol(User userCarol) {
-        this.userCarol = userCarol;
-    }
-
-    public User getUserDave() {
-        return userDave;
-    }
-
-    public void setUserDave(User userDave) {
-        this.userDave = userDave;
-    }
-
-    public User getUserEva() {
-        return userEva;
-    }
-
-    public void setUserEva(User userEva) {
-        this.userEva = userEva;
-    }
-
-    public User getUserFrank() {
-        return userFrank;
-    }
-
-    public void setUserFrank(User userFrank) {
-        this.userFrank = userFrank;
-    }
-
-    public Department getCs() {
-        return cs;
-    }
-
-    public void setCs(Department cs) {
-        this.cs = cs;
-    }
-
-    public Department getMath() {
-        return math;
-    }
-
-    public void setMath(Department math) {
-        this.math = math;
-    }
-
-    public Department getPhysics() {
-        return physics;
-    }
-
-    public void setPhysics(Department physics) {
-        this.physics = physics;
-    }
-
-    public Student getStudentAlice() {
-        return studentAlice;
-    }
-
-    public void setStudentAlice(Student studentAlice) {
-        this.studentAlice = studentAlice;
-    }
-
-    public Student getStudentBob() {
-        return studentBob;
-    }
-
-    public void setStudentBob(Student studentBob) {
-        this.studentBob = studentBob;
-    }
-
-    public Student getStudentCarlos() {
-        return studentCarlos;
-    }
-
-    public void setStudentCarlos(Student studentCarlos) {
-        this.studentCarlos = studentCarlos;
-    }
-
-    public Teacher getTeacherCarol() {
-        return teacherCarol;
-    }
-
-    public void setTeacherCarol(Teacher teacherCarol) {
-        this.teacherCarol = teacherCarol;
-    }
-
-    public Teacher getTeacherDave() {
-        return teacherDave;
-    }
-
-    public void setTeacherDave(Teacher teacherDave) {
-        this.teacherDave = teacherDave;
-    }
-
-    public Teacher getTeacherEva() {
-        return teacherEva;
-    }
-
-    public void setTeacherEva(Teacher teacherEva) {
-        this.teacherEva = teacherEva;
-    }
-
-    public ThesisProposal getThesisProposal1() {
-        return thesisProposal1;
-    }
-
-    public void setThesisProposal1(ThesisProposal thesisProposal1) {
-        this.thesisProposal1 = thesisProposal1;
-    }
-
-    public ThesisProposal getThesisProposal2() {
-        return thesisProposal2;
-    }
-
-    public void setThesisProposal2(ThesisProposal thesisProposal2) {
-        this.thesisProposal2 = thesisProposal2;
-    }
-
-    public ThesisProposal getThesisProposal3() {
-        return thesisProposal3;
-    }
-
-    public void setThesisProposal3(ThesisProposal thesisProposal3) {
-        this.thesisProposal3 = thesisProposal3;
-    }
-
-    public ThesisProposal getThesisProposal4() {
-        return thesisProposal4;
-    }
-
-    public void setThesisProposal4(ThesisProposal thesisProposal4) {
-        this.thesisProposal4 = thesisProposal4;
-    }
-
-    public Thesis getThesis1() {
-        return thesis1;
-    }
-
-    public void setThesis1(Thesis thesis1) {
-        this.thesis1 = thesis1;
-    }
-
-    public Thesis getThesis2() {
-        return thesis2;
-    }
-
-    public void setThesis2(Thesis thesis2) {
-        this.thesis2 = thesis2;
-    }
-
-    public Thesis getThesis3() {
-        return thesis3;
-    }
-
-    public void setThesis3(Thesis thesis3) {
-        this.thesis3 = thesis3;
-    }
-
-    public Review getReview1() {
-        return review1;
-    }
-
-    public void setReview1(Review review1) {
-        this.review1 = review1;
-    }
-
-    public Review getReview2() {
-        return review2;
-    }
-
-    public void setReview2(Review review2) {
-        this.review2 = review2;
-    }
-
-    public Review getReview3() {
-        return review3;
-    }
-
-    public void setReview3(Review review3) {
-        this.review3 = review3;
-    }
-
-    public Defense getDefense1() {
-        return defense1;
-    }
-
-    public void setDefense1(Defense defense1) {
-        this.defense1 = defense1;
-    }
-
-    public Defense getDefense2() {
-        return defense2;
-    }
-
-    public void setDefense2(Defense defense2) {
-        this.defense2 = defense2;
-    }
-
-    public Defense getDefense3() {
-        return defense3;
-    }
-
-    public void setDefense3(Defense defense3) {
-        this.defense3 = defense3;
-    }
-
-    public DefenseSession getDefenseSession1() {
-        return defenseSession1;
-    }
-
-    public void setDefenseSession1(DefenseSession defenseSession1) {
-        this.defenseSession1 = defenseSession1;
-    }
-
-    public DefenseSession getDefenseSession2() {
-        return defenseSession2;
-    }
-
-    public void setDefenseSession2(DefenseSession defenseSession2) {
-        this.defenseSession2 = defenseSession2;
-    }
-
-    public DefenseSession getDefenseSession3() {
-        return defenseSession3;
-    }
-
-    public void setDefenseSession3(DefenseSession defenseSession3) {
-        this.defenseSession3 = defenseSession3;
-    }
-
-    public DefenseSessionProfessor getDefenseSessionProfessor1() {
-        return defenseSessionProfessor1;
-    }
-
-    public void setDefenseSessionProfessor1(DefenseSessionProfessor defenseSessionProfessor1) {
-        this.defenseSessionProfessor1 = defenseSessionProfessor1;
-    }
-
-    public DefenseSessionProfessor getDefenseSessionProfessor2() {
-        return defenseSessionProfessor2;
-    }
-
-    public void setDefenseSessionProfessor2(DefenseSessionProfessor defenseSessionProfessor2) {
-        this.defenseSessionProfessor2 = defenseSessionProfessor2;
-    }
-
-    public DefenseSessionProfessor getDefenseSessionProfessor3() {
-        return defenseSessionProfessor3;
-    }
-
-    public void setDefenseSessionProfessor3(DefenseSessionProfessor defenseSessionProfessor3) {
-        this.defenseSessionProfessor3 = defenseSessionProfessor3;
-    }
-
-    public DefenseSessionProfessor getDefenseSessionProfessor4() {
-        return defenseSessionProfessor4;
-    }
-
-    public void setDefenseSessionProfessor4(DefenseSessionProfessor defenseSessionProfessor4) {
-        this.defenseSessionProfessor4 = defenseSessionProfessor4;
-    }
-
-    public DefenseSessionProfessor getDefenseSessionProfessor5() {
-        return defenseSessionProfessor5;
-    }
-
-    public void setDefenseSessionProfessor5(DefenseSessionProfessor defenseSessionProfessor5) {
-        this.defenseSessionProfessor5 = defenseSessionProfessor5;
-    }
-
-    public Comment getCom1() {
-        return com1;
-    }
-
-    public void setCom1(Comment com1) {
-        this.com1 = com1;
-    }
-
-    public Comment getCom2() {
-        return com2;
-    }
-
-    public void setCom2(Comment com2) {
-        this.com2 = com2;
-    }
-
-    public Comment getCom3() {
-        return com3;
-    }
-
-    public void setCom3(Comment com3) {
-        this.com3 = com3;
-    }
-
-    public DepartmentAppointment getApp1() {
-        return app1;
-    }
-
-    public void setApp1(DepartmentAppointment app1) {
-        this.app1 = app1;
-    }
-
-    public DepartmentAppointment getApp2() {
-        return app2;
-    }
-
-    public void setApp2(DepartmentAppointment app2) {
-        this.app2 = app2;
-    }
-
-    public DepartmentAppointment getApp3() {
-        return app3;
-    }
-
-    public void setApp3(DepartmentAppointment app3) {
-        this.app3 = app3;
-    }
-
-    public DepartmentAppointment getApp4() {
-        return app4;
-    }
-
-    public void setApp4(DepartmentAppointment app4) {
-        this.app4 = app4;
-    }
-
-    public DepartmentDefense getDhd1() {
-        return dhd1;
-    }
-
-    public void setDhd1(DepartmentDefense dhd1) {
-        this.dhd1 = dhd1;
-    }
-
-    public DepartmentDefense getDhd2() {
-        return dhd2;
-    }
-
-    public void setDhd2(DepartmentDefense dhd2) {
-        this.dhd2 = dhd2;
-    }
-
-    public DepartmentDefense getDhd3() {
-        return dhd3;
-    }
-
-    public void setDhd3(DepartmentDefense dhd3) {
-        this.dhd3 = dhd3;
-    }
-
-    public DepartmentDefense getDhd4() {
-        return dhd4;
-    }
-
-    public void setDhd4(DepartmentDefense dhd4) {
-        this.dhd4 = dhd4;
-    }
-
-    public DepartmentDefense getDhd5() {
-        return dhd5;
-    }
-
-    public void setDhd5(DepartmentDefense dhd5) {
-        this.dhd5 = dhd5;
-    }
-
-    public UserInDepartment getUid1() {
-        return uid1;
-    }
-
-    public void setUid1(UserInDepartment uid1) {
-        this.uid1 = uid1;
-    }
-
-    public UserInDepartment getUid2() {
-        return uid2;
-    }
-
-    public void setUid2(UserInDepartment uid2) {
-        this.uid2 = uid2;
-    }
-
-    public UserInDepartment getUid3() {
-        return uid3;
-    }
-
-    public void setUid3(UserInDepartment uid3) {
-        this.uid3 = uid3;
-    }
-
-    public UserInDepartment getUid4() {
-        return uid4;
-    }
-
-    public void setUid4(UserInDepartment uid4) {
-        this.uid4 = uid4;
-    }
-
-    public UserInDepartment getUid5() {
-        return uid5;
-    }
-
-    public void setUid5(UserInDepartment uid5) {
-        this.uid5 = uid5;
-    }
-
-    public UserInDepartment getUid6() {
-        return uid6;
-    }
-
-    public void setUid6(UserInDepartment uid6) {
-        this.uid6 = uid6;
-    }
-
-    public UserInDepartment getUid7() {
-        return uid7;
-    }
-
-    public void setUid7(UserInDepartment uid7) {
-        this.uid7 = uid7;
-    }
 
     public void populate(TestEntityManager entityManager) {
         createUsers(entityManager);
@@ -567,7 +138,7 @@ public class TestDataPopulator {
 
     private void createTeachers(TestEntityManager em) {
         teacherCarol = Teacher.builder()
-                .user(userCarlos) // Link to User
+                .user(userCarol) // Fixed: Link to userCarol instead of userCarlos
                 .createdAt(NOW).lastModifiedAt(null)
                 .position(TeacherPosition.PROFESSOR)
                 .build();
@@ -640,13 +211,13 @@ public class TestDataPopulator {
 
         review1 = Review.builder().createdAt(NOW).lastModifiedAt(null)
                 .conclusion(ReviewConclusion.ACCEPTED).content("The student demonstrated a strong understanding of AI principles and applied them effectively. The prototype is promising. Thesis is accepted for defense.")
-                .teacher(teacherCarol).build();
+                .teacher(teacherCarol).thesis(thesis1).build(); // Link to thesis1
         review2 = Review.builder().createdAt(NOW).lastModifiedAt(NOW.minusHours(1))
                 .conclusion(ReviewConclusion.ACCEPTED).content("The literature review is comprehensive, but the proposed scheme requires more rigorous analysis regarding potential vulnerabilities. However, it meets the criteria for defense.")
-                .teacher(teacherDave).build();
+                .teacher(teacherDave).thesis(thesis2).build(); // Link to thesis2
         review3 = Review.builder().createdAt(NOW).lastModifiedAt(null)
                 .conclusion(ReviewConclusion.REJECTED).content("The initial submission lacks sufficient theoretical background and the implementation is incomplete. Significant revisions are required.")
-                .teacher(teacherEva).build();
+                .teacher(teacherEva).thesis(thesis3).build(); // Link to thesis3
 
         em.persist(review1);
         em.persist(review2);
@@ -724,7 +295,7 @@ public class TestDataPopulator {
         // SQL 'YYYY-MM-DD HH:MM:SS+00' implies UTC.
         app1 = DepartmentAppointment.builder().createdAt(NOW).lastModifiedAt(null)
                 .endDate(OffsetDateTime.parse("2025-08-31T00:00:00Z")).startDate(OffsetDateTime.parse("2020-09-01T00:00:00Z"))
-                .department(cs).user(userCarlos).build();
+                .department(cs).user(userCarlos).build(); // Reverted: userCarlos (student) has CS appointment
         app2 = DepartmentAppointment.builder().createdAt(NOW).lastModifiedAt(null)
                 .endDate(OffsetDateTime.parse("2026-08-31T00:00:00Z")).startDate(OffsetDateTime.parse("2021-09-01T00:00:00Z"))
                 .department(math).user(userDave).build();

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            color: #343a40;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .error-container {
+            text-align: center;
+            padding: 3rem;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+        .error-status {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .error-message {
+            font-size: 1.5rem;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+        }
+        .error-details {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 2rem;
+        }
+        .btn-home {
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="error-container">
+                    <div th:if="${status}" class="error-status" th:text="${status}">500</div>
+                    <div th:unless="${status}" class="error-status">Error</div>
+
+                    <div th:if="${error}" class="error-message" th:text="${error}">Something went wrong</div>
+                    <div th:unless="${error}" class.error-message>An unexpected error occurred.</div>
+
+                    <div class="error-details">
+                        <p th:if="${message}" th:text="${message}">No specific message available.</p>
+                        <p>Timestamp: <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm:ss')}"></span></p>
+                        <p th:if="${path}">Path: <span th:text="${path}"></span></p>
+                    </div>
+                    <a href="/" th:href="@{/}" class="btn btn-primary btn-lg btn-home">Go to Homepage</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

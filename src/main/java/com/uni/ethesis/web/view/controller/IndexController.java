@@ -1,8 +1,7 @@
 package com.uni.ethesis.web.view.controller;
 
-import com.uni.ethesis.web.view.model.UserViewModel;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -12,7 +11,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import java.time.LocalDateTime;
+import com.uni.ethesis.web.view.model.UserViewModel;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Controller
@@ -62,5 +64,10 @@ public class IndexController {
         log.info("clicked button");
         model.addAttribute("now", LocalDateTime.now().toString());
         return "fragments/clicked :: result";
+    }
+
+    @GetMapping("/test-error")
+    public String testError() {
+        throw new RuntimeException("This is a test exception to demonstrate the error page.");
     }
 }

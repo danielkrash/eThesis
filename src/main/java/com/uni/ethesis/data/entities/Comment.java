@@ -19,10 +19,10 @@ public class Comment extends BaseEntity {
     @Column(columnDefinition = "text" , nullable = false)
     @Size(min = 1)
     private String content;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "review_id", nullable = false)
     private Review review;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

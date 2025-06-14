@@ -22,10 +22,10 @@ public class Department extends BaseEntity {
     private String name;
     @Column(columnDefinition = "text")
     private String description;
-    @OneToMany(mappedBy = "department", orphanRemoval = false)
+    @OneToMany(mappedBy = "department", orphanRemoval = false , cascade = CascadeType.ALL)
     private Set<DepartmentAppointment> appointments;
-    @OneToMany(mappedBy = "department", orphanRemoval = false)
+    @OneToMany(mappedBy = "department", orphanRemoval = false , cascade = CascadeType.ALL)
     private Set<UserInDepartment> users;
-    @OneToMany(mappedBy = "department", orphanRemoval = false)
+    @OneToMany(mappedBy = "department", orphanRemoval = false , cascade = CascadeType.ALL)
     private Set<DepartmentDefense> defenses;
 }

@@ -1,4 +1,7 @@
 package com.uni.ethesis.service;
 
-public class UserService {
+import java.util.UUID;
+
+public interface UserService {
+    void deleteUserById(UUID id);
 }

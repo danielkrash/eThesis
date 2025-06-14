@@ -25,15 +25,15 @@ public class ThesisProposal extends BaseEntity {
     private String objectives;
     @Column(columnDefinition = "text")
     private String technology;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "student_id")
     private Student student;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "text")
     private ThesisProposalStatus status;
-    @OneToOne(mappedBy = "proposal")
+    @OneToOne(mappedBy = "proposal" , cascade = CascadeType.ALL)
     private Thesis thesis;
 }

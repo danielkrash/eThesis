@@ -1,9 +1,6 @@
 package com.uni.ethesis.data.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,10 +15,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Table(name = "department_has_defenses")
 public class DepartmentDefense extends BaseEntity{
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "defense_id", nullable = false)
     private Defense defense;
 }

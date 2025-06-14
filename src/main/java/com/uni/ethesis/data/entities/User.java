@@ -1,14 +1,19 @@
 package com.uni.ethesis.data.entities;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.Fetch;
-import org.springframework.data.repository.cdi.Eager;
-
-import java.util.HashSet;
 import java.util.Set;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,17 +30,11 @@ public class User extends BaseEntity {
     @Column(unique = true, name = "email" , columnDefinition = "text")
     @Email(message = "Email should be valid")
     private String email;
-    @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY , cascade = CascadeType.ALL)
     private Set<DepartmentAppointment> appointments;
-    @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY , cascade = CascadeType.ALL)
     private Set<UserInDepartment> departments;
-    @OneToOne(mappedBy = "user" , orphanRemoval = false)
-    @PrimaryKeyJoinColumn
-    private Student student;
-    @OneToOne(mappedBy = "user" , orphanRemoval = false)
-    @PrimaryKeyJoinColumn
-    private Teacher teacher;
-    @OneToMany(mappedBy = "user", orphanRemoval = false)
+    @OneToMany(mappedBy = "user", orphanRemoval = false , cascade = CascadeType.ALL)
     private Set<Comment> comments;
 }
 

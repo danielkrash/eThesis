@@ -1,22 +1,18 @@
 package com.uni.ethesis.web.view.controller;
 
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.uni.ethesis.data.dto.ThesisProposalDto;
-import com.uni.ethesis.data.dto.UserDto;
 import com.uni.ethesis.service.ThesisApplicationService;
-import com.uni.ethesis.service.UserService;
+import com.uni.ethesis.service.UserViewService;
 import com.uni.ethesis.utils.AuthenticationUtils;
 import com.uni.ethesis.utils.mappers.ThesisApplicationMapper;
-import com.uni.ethesis.utils.mappers.UserMapper;
 import com.uni.ethesis.web.view.model.ThesisProposalViewModel;
 import com.uni.ethesis.web.view.model.UserViewModel;
 
@@ -29,9 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 public class DashboardController {
 
     private final ThesisApplicationService thesisApplicationService;
-    private final UserService userService;
+    private final UserViewService userViewService;
     private final ThesisApplicationMapper thesisApplicationMapper;
-    private final UserMapper userMapper;
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('STUDENT') or hasRole('TEACHER') or hasRole('ADMIN')")
@@ -42,9 +37,8 @@ public class DashboardController {
         }
 
         try {
-            // Get user information from database like in ProfileController
-            UserDto currentUser = getCurrentUser(auth);
-            UserViewModel user = createUserViewModelFromDto(currentUser, auth);
+            // Get user information using UserViewService
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
             model.addAttribute("user", user);
 
             // Add role-specific data based on user's role(s)
@@ -72,46 +66,6 @@ public class DashboardController {
             model.addAttribute("error", "Failed to load dashboard data");
             return "dashboard/main";
         }
-    }
-
-    private UserDto getCurrentUser(Authentication auth) {
-        if (auth.getPrincipal() instanceof OAuth2User principal) {
-            String id = principal.getAttribute("sub");
-            if (id != null) {
-                return userService.getUserById(UUID.fromString(id));
-            }
-        }
-        throw new IllegalStateException("Unable to determine current user");
-    }
-
-    private UserViewModel createUserViewModelFromDto(UserDto currentUser, Authentication auth) {
-        UserViewModel userViewModel = userMapper.toViewModel(currentUser);
-        userViewModel.setRole(getUserRole(auth));
-        return userViewModel;
-    }
-
-    private String getUserRole(Authentication auth) {
-        // Check if role is available in OAuth2User attributes
-        if (auth.getPrincipal() instanceof OAuth2User principal) {
-            // Try to get role from OAuth2 attributes first
-            String role = principal.getAttribute("role");
-            if (role != null) {
-                return role;
-            }
-        }
-        
-        // Get all authorities/roles and join them
-        String roles = auth.getAuthorities().stream()
-            .map(authority -> authority.getAuthority())
-            .filter(authority -> authority.startsWith("ROLE_"))
-            .map(authority -> authority.substring(5)) // Remove "ROLE_" prefix
-            .filter(role -> role.equalsIgnoreCase("STUDENT") || role.equalsIgnoreCase("TEACHER") || role.equalsIgnoreCase("ADMIN"))
-            .map(role -> role.toLowerCase())
-            .distinct()
-            .sorted() // Sort to have consistent order (admin, student, teacher)
-            .collect(java.util.stream.Collectors.joining(", "));
-        
-        return roles.isEmpty() ? "USER" : roles;
     }
 
     private void loadStudentData(Model model) {

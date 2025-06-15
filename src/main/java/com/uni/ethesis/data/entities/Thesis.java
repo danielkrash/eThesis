@@ -1,19 +1,26 @@
 package com.uni.ethesis.data.entities;
 
+import java.math.BigDecimal;
+import java.util.Set;
+
 import com.uni.ethesis.enums.ThesisStatus;
-import jakarta.persistence.*;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-
-import java.math.BigDecimal;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -33,9 +40,9 @@ public class Thesis extends BaseEntity {
     @Column(name = "status" , columnDefinition = "text")
     @Enumerated(EnumType.STRING)
     private ThesisStatus status;
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "proposal_id", unique = true)
     private ThesisProposal proposal;
-    @OneToMany(mappedBy = "thesis", orphanRemoval = false)
+    @OneToMany(mappedBy = "thesis", orphanRemoval = true , cascade = CascadeType.ALL)
     private Set<DefenseSession> sessions;
 }

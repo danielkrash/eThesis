@@ -20,8 +20,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.uni.ethesis.data.dto.ThesisDto;
 import com.uni.ethesis.data.entities.Thesis;
 import com.uni.ethesis.data.entities.ThesisProposal;
+import com.uni.ethesis.data.repo.ReviewRepository;
 import com.uni.ethesis.data.repo.ThesisProposalRepository;
 import com.uni.ethesis.data.repo.ThesisRepository;
+import com.uni.ethesis.enums.ReviewConclusion;
 import com.uni.ethesis.enums.ThesisStatus;
 import com.uni.ethesis.exceptions.FileUploadException;
 import com.uni.ethesis.exceptions.ThesisNotFoundException;
@@ -34,6 +36,7 @@ public class ThesisServiceImpl implements ThesisService {
 
     private final ThesisRepository thesisRepository;
     private final ThesisProposalRepository thesisProposalRepository;
+    private final ReviewRepository reviewRepository;
     private final ThesisMapper thesisMapper;
 
     @Value("${app.thesis.upload-dir:uploads/theses}")
@@ -44,9 +47,11 @@ public class ThesisServiceImpl implements ThesisService {
     @Autowired
     public ThesisServiceImpl(ThesisRepository thesisRepository,
                              ThesisProposalRepository thesisProposalRepository,
+                             ReviewRepository reviewRepository,
                              ThesisMapper thesisMapper) {
         this.thesisRepository = thesisRepository;
         this.thesisProposalRepository = thesisProposalRepository;
+        this.reviewRepository = reviewRepository;
         this.thesisMapper = thesisMapper;
     }
 
@@ -278,24 +283,79 @@ public class ThesisServiceImpl implements ThesisService {
             throw new IllegalStateException("Thesis cannot proceed to defense - review not accepted or not reviewed yet");
         }
 
-        thesis.setStatus(ThesisStatus.WAITING_FOR_DEFENSE);
+        thesis.setStatus(ThesisStatus.READY_FOR_DEFENSE); // means thesis is ready , but defense date is not assigned yet
         Thesis updatedThesis = thesisRepository.save(thesis);
         return thesisMapper.thesisToThesisDto(updatedThesis);
     }
 
     @Override
     public boolean canStudentProceedToDefense(UUID thesisId) {
-        // For now, we'll implement basic logic here
-        // In a more sophisticated approach, we'd inject ReviewService
         Thesis thesis = thesisRepository.findById(thesisId).orElse(null);
         if (thesis == null) {
             return false;
         }
         
-        // Simple check: if thesis has PDF and status allows progression
-        return thesis.getPdfPath() != null && 
-               (thesis.getStatus() == ThesisStatus.WAITING_FOR_REVIEW || 
-                thesis.getStatus() == ThesisStatus.WAITING_FOR_DEFENSE);
+        // Check if thesis has PDF uploaded
+        if (thesis.getPdfPath() == null) {
+            return false;
+        }
+        
+        // Check if thesis status is WAITING_FOR_REVIEW (not WAITING_FOR_DEFENSE)
+        if (thesis.getStatus() != ThesisStatus.WAITING_FOR_REVIEW) {
+            return false;
+        }
+        
+        // Check if the latest review has been accepted
+        return reviewRepository.findLatestByThesisId(thesisId)
+                .map(review -> review.getConclusion() == ReviewConclusion.ACCEPTED)
+                .orElse(false); // No review exists, so cannot proceed
+    }
+
+    // New methods for READY_FOR_DEFENSE status
+    @Override
+    @Transactional
+    public ThesisDto markThesisReadyForDefense(UUID thesisId) {
+        if (!canMarkThesisReadyForDefense(thesisId)) {
+            throw new IllegalStateException("Thesis cannot be marked as ready for defense. Check requirements.");
+        }
+
+        Thesis thesis = thesisRepository.findById(thesisId)
+                .orElseThrow(() -> new ThesisNotFoundException("Thesis not found with id: " + thesisId));
+
+        thesis.setStatus(ThesisStatus.READY_FOR_DEFENSE);
+        Thesis updatedThesis = thesisRepository.save(thesis);
+        return thesisMapper.thesisToThesisDto(updatedThesis);
+    }
+
+    @Override
+    public boolean canMarkThesisReadyForDefense(UUID thesisId) {
+        Thesis thesis = thesisRepository.findById(thesisId).orElse(null);
+        if (thesis == null) {
+            return false;
+        }
+
+        // Check if thesis has PDF uploaded
+        if (thesis.getPdfPath() == null) {
+            return false;
+        }
+
+        // Check if thesis status is WAITING_FOR_REVIEW
+        if (thesis.getStatus() != ThesisStatus.WAITING_FOR_REVIEW) {
+            return false;
+        }
+
+        // Check if the latest review has been accepted
+        return reviewRepository.findLatestByThesisId(thesisId)
+                .map(review -> review.getConclusion() == ReviewConclusion.ACCEPTED)
+                .orElse(false);
+    }
+
+    @Override
+    public List<ThesisDto> findThesesReadyForDefense() {
+        List<Thesis> theses = thesisRepository.findByStatus(ThesisStatus.READY_FOR_DEFENSE);
+        return theses.stream()
+                .map(thesisMapper::thesisToThesisDto)
+                .collect(Collectors.toList());
     }
 
     private boolean isPdfFile(MultipartFile file) {

@@ -45,10 +45,12 @@ public class UserSynchronizationSuccessHandler implements AuthenticationSuccessH
 
         try {
             // Handle both OIDC and OAuth2 users
-            String keycloakUserId = null;
-            String email = null;
-            String firstName = null;
-            String lastName = null;
+            String keycloakUserId;
+            String email;
+            String firstName;
+            String lastName;
+            String universityId;
+            String position;
             Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
             if (authentication.getPrincipal() instanceof OidcUser oidcUser) {
@@ -57,6 +59,8 @@ public class UserSynchronizationSuccessHandler implements AuthenticationSuccessH
                 email = oidcUser.getEmail();
                 firstName = oidcUser.getGivenName();
                 lastName = oidcUser.getFamilyName();
+                universityId = oidcUser.getClaimAsString("faculty_number");
+                position = oidcUser.getClaimAsString("position");
                 log.info("OIDC user login: {}", keycloakUserId);
             } else if (authentication.getPrincipal() instanceof OAuth2User oauth2User) {
                 // OAuth2 login
@@ -65,6 +69,8 @@ public class UserSynchronizationSuccessHandler implements AuthenticationSuccessH
                 email = (String) attributes.get("email");
                 firstName = (String) attributes.get("given_name");
                 lastName = (String) attributes.get("family_name");
+                universityId = (String) attributes.get("faculty_number");
+                position = (String) attributes.get("position");
                 log.info("OAuth2 user login: {}", keycloakUserId);
             } else {
                 log.warn("Unknown authentication principal type: {}", authentication.getPrincipal().getClass());
@@ -88,51 +94,12 @@ public class UserSynchronizationSuccessHandler implements AuthenticationSuccessH
                 return;
             }
 
-            // Check if user exists in database
-            Optional<User> existingUser = userRepository.findById(userId);
-
-            if (existingUser.isEmpty()) {
-                // User doesn't exist, create new user
-                User newUser = User.builder()
-                        .id(userId)
-                        .email(email)
-                        .firstName(firstName)
-                        .lastName(lastName)
-                        .build();
-
-                userRepository.save(newUser);
-                log.info("New user created in database: {} ({})", email, userId);
-
-                // Create Student or Teacher based on roles
-                createUserRole(newUser, authorities);
-            } else {
-                // User exists, optionally update info
-                User user = existingUser.get();
-                boolean updated = false;
-
-                if (!email.equals(user.getEmail())) {
-                    user.setEmail(email);
-                    updated = true;
-                }
-                if (firstName != null && !firstName.equals(user.getFirstName())) {
-                    user.setFirstName(firstName);
-                    updated = true;
-                }
-                if (lastName != null && !lastName.equals(user.getLastName())) {
-                    user.setLastName(lastName);
-                    updated = true;
-                }
-
-                if (updated) {
-                    userRepository.save(user);
-                    log.info("User info updated in database: {} ({})", email, userId);
-                } else {
-                    log.info("User already exists with current info: {} ({})", email, userId);
-                }
-
-                // Ensure user has correct role (in case role changed in Keycloak)
-                ensureUserRole(user, authorities);
-            }
+            // Use a more robust approach for user management
+            User managedUser = createOrUpdateUser(userId, email, firstName, lastName);
+            
+            // Manage roles separately to avoid cascade conflicts
+            manageUserRoles(managedUser, authorities , universityId , position);
+            
         } catch (Exception e) {
             log.error("Error during user synchronization", e);
             response.sendRedirect("/error");
@@ -142,63 +109,110 @@ public class UserSynchronizationSuccessHandler implements AuthenticationSuccessH
         response.sendRedirect("/dashboard");
     }
 
-    private void createUserRole(User user, Collection<? extends GrantedAuthority> authorities) {
+    private User createOrUpdateUser(UUID userId, String email, String firstName, String lastName) {
+        // First try to find existing user
+        Optional<User> existingUser = userRepository.findById(userId);
+        
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+            boolean needsUpdate = false;
+            
+            // Check if any field needs updating
+            if (email != null && !email.equals(user.getEmail())) {
+                user.setEmail(email);
+                needsUpdate = true;
+            }
+            if (firstName != null && !firstName.equals(user.getFirstName())) {
+                user.setFirstName(firstName);
+                needsUpdate = true;
+            }
+            if (lastName != null && !lastName.equals(user.getLastName())) {
+                user.setLastName(lastName);
+                needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+                try {
+                    // Use merge instead of save to handle detached entities better
+                    User updatedUser = userRepository.saveAndFlush(user);
+                    log.info("User info updated in database: {} ({})", email, userId);
+                    return updatedUser;
+                } catch (Exception e) {
+                    log.warn("Failed to update user info, using existing data: {} ({})", email, userId, e);
+                    return user;
+                }
+            } else {
+                log.info("User already exists with current info: {} ({})", email, userId);
+                return user;
+            }
+        } else {
+            // Create new user
+            try {
+                User newUser = User.builder()
+                        .id(userId)
+                        .email(email)
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .build();
+                
+                User savedUser = userRepository.saveAndFlush(newUser);
+                log.info("New user created in database: {} ({})", email, userId);
+                return savedUser;
+            } catch (Exception e) {
+                log.error("Failed to create new user: {} ({})", email, userId, e);
+                // Check if user was created by another thread in the meantime
+                Optional<User> retryUser = userRepository.findById(userId);
+                if (retryUser.isPresent()) {
+                    log.info("User found on retry: {} ({})", email, userId);
+                    return retryUser.get();
+                } else {
+                    throw new RuntimeException("Unable to create or find user", e);
+                }
+            }
+        }
+    }
+
+    private void manageUserRoles(User user, Collection<? extends GrantedAuthority> authorities , String universityId , String position) {
         boolean isStudent = authorities.stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_STUDENT"));
         boolean isTeacher = authorities.stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_TEACHER"));
-
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_TEACHER"));        // Handle student role
         if (isStudent) {
-            Student student = Student.builder()
-                    .user(user)
-                    .id(user.getId())
-                    .studentType(StudentType.LOCAL) // Default type, can be updated later
-                    .build();
-            studentRepository.save(student);
-            log.info("Student role created for user: {}", user.getEmail());
+            if (!studentRepository.existsById(user.getId())) {
+                try {
+                    Student student = Student.builder()
+                            .user(user)
+                            .universityId(universityId)
+                            .studentType(StudentType.LOCAL)
+                            .build();
+                    
+                    studentRepository.saveAndFlush(student);
+                    log.info("Student role created for user: {}", user.getEmail());
+                } catch (Exception e) {
+                    log.error("Failed to create student role for user: {}", user.getEmail(), e);
+                }
+            }
         }
 
+        // Handle teacher role
         if (isTeacher) {
-            Teacher teacher = Teacher.builder()
-                    .user(user)
-                    .id(user.getId())
-                    .position(TeacherPosition.TEACHING_ASSISTANT) // Default position, can be updated later
-                    .build();
-            teacherRepository.save(teacher);
-            log.info("Teacher role created for user: {}", user.getEmail());
+            if (!teacherRepository.existsById(user.getId())) {
+                try {
+                    Teacher teacher = Teacher.builder()
+                            .user(user)
+                            .position(position.isEmpty() ? TeacherPosition.LECTURER : TeacherPosition.valueOf(position.toUpperCase()))
+                            .build();
+                    
+                    teacherRepository.saveAndFlush(teacher);
+                    log.info("Teacher role created for user: {}", user.getEmail());
+                } catch (Exception e) {
+                    log.error("Failed to create teacher role for user: {}", user.getEmail(), e);
+                }
+            }
         }
 
         if (!isStudent && !isTeacher) {
             log.warn("User has no recognized role (STUDENT/TEACHER): {}", user.getEmail());
-        }
-    }
-
-    private void ensureUserRole(User user, Collection<? extends GrantedAuthority> authorities) {
-        boolean isStudent = authorities.stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_STUDENT"));
-        boolean isTeacher = authorities.stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_TEACHER"));
-
-        // Check if student role exists
-        if (isStudent && !studentRepository.existsById(user.getId())) {
-            Student student = Student.builder()
-                    .user(user)
-                    .id(user.getId())
-                    .studentType(StudentType.LOCAL)
-                    .build();
-            studentRepository.save(student);
-            log.info("Student role added for existing user: {}", user.getEmail());
-        }
-
-        // Check if teacher role exists
-        if (isTeacher && !teacherRepository.existsById(user.getId())) {
-            Teacher teacher = Teacher.builder()
-                    .user(user)
-                    .id(user.getId())
-                    .position(TeacherPosition.TEACHING_ASSISTANT)
-                    .build();
-            teacherRepository.save(teacher);
-            log.info("Teacher role added for existing user: {}", user.getEmail());
         }
     }
 }

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} ?: 'University Thesis Portal'">University Thesis Portal</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet" th:href="@{/css/bootstrap.min.css}"/>
+    <!-- Bootstrap Icons -->
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+          rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/custom.css}" rel="stylesheet">
+    
+    <!-- HTMX for dynamic interactions -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+</head>
+
+<body>
+    <!-- Navigation Header -->
+    <nav th:fragment="header" class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                University Thesis Portal
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">
+                            <i class="bi bi-house me-1"></i>Home
+                        </a>
+                    </li>
+                    
+                    <!-- Student Menu -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('STUDENT')">
+                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                            <i class="bi bi-person-graduate me-1"></i>Student
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" th:href="@{/student/proposals}">My Proposals</a></li>
+                            <li><a class="dropdown-item" th:href="@{/student/thesis}">My Thesis</a></li>
+                            <li><a class="dropdown-item" th:href="@{/proposals/browse}">Browse Proposals</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Teacher Menu -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('TEACHER')">
+                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                            <i class="bi bi-person-check me-1"></i>Teacher
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" th:href="@{/teacher/proposals}">My Proposals</a></li>
+                            <li><a class="dropdown-item" th:href="@{/teacher/theses}">Supervised Theses</a></li>
+                            <li><a class="dropdown-item" th:href="@{/teacher/reviews}">Reviews</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" th:href="@{/proposals/create}">Create Proposal</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Admin Menu -->
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                            <i class="bi bi-gear me-1"></i>Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" th:href="@{/admin/users}">Manage Users</a></li>
+                            <li><a class="dropdown-item" th:href="@{/admin/proposals}">All Proposals</a></li>
+                            <li><a class="dropdown-item" th:href="@{/admin/theses}">All Theses</a></li>
+                            <li><a class="dropdown-item" th:href="@{/admin/reports}">Reports</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- User Info and Logout -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer;">
+                            <!-- Profile Avatar with User Initials -->
+                            <div class="profile-avatar-solid me-2" th:if="${user != null}">
+                                <span th:text="${user.firstName.substring(0,1).toUpperCase() + user.lastName.substring(0,1).toUpperCase()}">UU</span>
+                            </div>
+                            <!-- Fallback Profile Icon -->
+                            <div class="profile-avatar me-2" th:if="${user == null}">
+                                <i class="bi bi-person-circle fs-4"></i>
+                            </div>
+                            <span th:text="${user != null ? user.firstName + ' ' + user.lastName : 'User'}">User</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li class="dropdown-header d-flex align-items-center py-2">
+                                <div class="profile-avatar-solid me-2" th:if="${user != null}" style="width: 24px; height: 24px; font-size: 0.7rem;">
+                                    <span th:text="${user.firstName.substring(0,1).toUpperCase() + user.lastName.substring(0,1).toUpperCase()}">UU</span>
+                                </div>
+                                <div class="profile-avatar me-2" th:if="${user == null}" style="width: 24px; height: 24px;">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0" th:text="${user != null ? user.firstName + ' ' + user.lastName : 'User'}">User Name</h6>
+                                    <small class="text-muted" th:text="${user != null ? user.email : 'user@example.com'}">user@example.com</small>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" th:href="@{/profile}">
+                                <i class="bi bi-person me-2"></i>Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Login Button for unauthenticated users -->
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="nav-link" href="/oauth2/authorization/graduation-application">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main th:fragment="main" class="container-fluid">
+        <!-- This will be replaced by actual content -->
+    </main>
+
+    <!-- Footer -->
+    <footer th:fragment="footer" class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-mortarboard-fill me-2"></i>University Thesis Portal</h5>
+                    <p class="mb-0">Streamlining thesis management for students and faculty.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-light text-decoration-none">Help Center</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Guidelines</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6>Resources</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-light text-decoration-none">Thesis Templates</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Research Tools</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Academic Calendar</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-3">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small>&copy; 2025 University Thesis Portal. All rights reserved.</small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small>Version 1.0 | <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2025</span></small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts Fragment -->
+    <div th:fragment="scripts">
+        <!-- Bootstrap JS -->
+        <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+        
+        <!-- Custom JS -->
+        <script th:src="@{/js/custom.js}"></script>
+    </div>
+</body>
+</html>

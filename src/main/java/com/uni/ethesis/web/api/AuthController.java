@@ -3,7 +3,6 @@ package com.uni.ethesis.web.api;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -126,60 +125,4 @@ public class AuthController {
         }
         oidcLogoutSuccessHandler.onLogoutSuccess(request, response, authentication);
     }
-}
-
-    // --- The following endpoints are typically handled by Keycloak directly --- //
-
-    /*
-    @PostMapping("/register")
-    public String register() {
-        // User registration is typically handled by Keycloak's registration page.
-        // Enable registration in your Keycloak realm settings.
-        return "User registration is handled by Keycloak.";
-    }
-    */
-
-    /*
-    @PostMapping("/refresh-token")
-    public String refreshToken() {
-        // Token refresh is an OAuth2 flow where the client (holding a refresh token)
-        // makes a request directly to Keycloak's token endpoint.
-        // The Spring Boot backend (as a resource server) doesn't typically implement an endpoint for this.
-        return "Token refresh is handled by the client with Keycloak's token endpoint.";
-    }
-    */
-
-    /*
-    @PostMapping("/forgot-password")
-    public String forgotPassword() {
-        // Password recovery is a feature provided by Keycloak.
-        // Users should use Keycloak's UI for this.
-        return "Forgot password functionality is handled by Keycloak.";
-    }
-    */
-
-    /*
-    @PostMapping("/reset-password")
-    public String resetPassword() {
-        // Password reset is part of Keycloak's password recovery flow.
-        return "Password reset is handled by Keycloak.";
-    }
-    */
-
-    /*
-    @PostMapping("/change-password")
-    public String changePassword() {
-        // Users can change their password via Keycloak's Account Management console.
-        // If an API for this is needed, it would typically involve Keycloak Admin APIs.
-        return "Password change is handled by Keycloak Account Management.";
-    }
-    */
-
-    /*
-    @PostMapping("/verify-email")
-    public String verifyEmail() {
-        // Email verification is a feature of Keycloak, handled via links sent to the user's email.
-        return "Email verification is handled by Keycloak.";
-    }
-    */
 }

@@ -129,8 +129,10 @@ public class DefenseSessionServiceImpl implements DefenseSessionService {
         Thesis thesis = thesisRepository.findById(thesisId)
                 .orElseThrow(() -> new ThesisNotFoundException("Thesis not found with id: " + thesisId));
 
-        if (thesis.getStatus() != ThesisStatus.WAITING_FOR_DEFENSE) {
-            throw new IllegalStateException("Thesis is not ready for defense. Current status: " + thesis.getStatus());
+        // Check if thesis is ready for defense scheduling
+        if (thesis.getStatus() != ThesisStatus.READY_FOR_DEFENSE) {
+            throw new IllegalStateException("Thesis is not ready for defense scheduling. Current status: " + thesis.getStatus() 
+                + ". Expected status: READY_FOR_DEFENSE");
         }
 
         // Validate defense exists
@@ -146,6 +148,11 @@ public class DefenseSessionServiceImpl implements DefenseSessionService {
                 .build();
 
         DefenseSession savedDefenseSession = defenseSessionRepository.save(defenseSession);
+
+        // Update thesis status to WAITING_FOR_DEFENSE (now that it's scheduled)
+        thesis.setStatus(ThesisStatus.WAITING_FOR_DEFENSE);
+        thesisRepository.save(thesis);
+
         return defenseSessionMapper.defenseSessionToDefenseSessionDto(savedDefenseSession);
     }
 

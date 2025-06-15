@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <!-- Alert Messages -->
+        <div class="container mt-3" th:if="${message}">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                <span th:text="${message}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+        
+        <div class="container mt-3" th:if="${error}">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div th:replace="${content}">
+            <!-- Default content if none specified -->
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="text-center py-5">
+                            <h2>Welcome to University Thesis Portal</h2>
+                            <p class="text-muted">Manage your thesis journey efficiently</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

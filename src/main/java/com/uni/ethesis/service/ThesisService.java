@@ -46,4 +46,25 @@ public interface ThesisService {
     // Student workflow methods
     ThesisDto proceedToDefense(UUID thesisId);
     boolean canStudentProceedToDefense(UUID thesisId);
+    
+    // New methods for READY_FOR_DEFENSE status
+    /**
+     * Mark thesis as ready for defense after positive review
+     * @param thesisId The thesis ID
+     * @return Updated thesis DTO
+     */
+    ThesisDto markThesisReadyForDefense(UUID thesisId);
+    
+    /**
+     * Check if thesis can be marked as ready for defense
+     * @param thesisId The thesis ID
+     * @return true if can be marked ready
+     */
+    boolean canMarkThesisReadyForDefense(UUID thesisId);
+    
+    /**
+     * Get all theses that are ready for defense (awaiting defense scheduling)
+     * @return List of theses ready for defense
+     */
+    List<ThesisDto> findThesesReadyForDefense();
 }

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2 class="display-6 fw-bold text-primary">
+                        <i class="bi bi-speedometer2 me-3"></i>Teacher Dashboard
+                    </h2>
+                    <p class="text-muted">Manage your proposals, supervise students, and track their progress.</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/teacher/proposals/create}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Create New Proposal
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-file-earmark-text text-info" style="font-size: 2.5rem;"></i>
+                            </div>
+                            <h4 class="fw-bold text-info" th:text="${totalProposals}">0</h4>
+                            <p class="text-muted mb-0">Total Proposals</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-clock text-warning" style="font-size: 2.5rem;"></i>
+                            </div>
+                            <h4 class="fw-bold text-warning" th:text="${pendingCount}">0</h4>
+                            <p class="text-muted mb-0">Pending Approval</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-people text-success" style="font-size: 2.5rem;"></i>
+                            </div>
+                            <h4 class="fw-bold text-success" th:text="${totalTheses}">0</h4>
+                            <p class="text-muted mb-0">Supervised Theses</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-trophy text-warning" style="font-size: 2.5rem;"></i>
+                            </div>
+                            <h4 class="fw-bold text-warning" th:text="${successfulDefenses}">0</h4>
+                            <p class="text-muted mb-0">Successful Defenses</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Recent Proposals -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-file-earmark-text me-2"></i>Recent Proposals
+                            </h5>
+                            <a th:href="@{/teacher/proposals}" class="btn btn-sm btn-outline-primary">
+                                View All
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div th:if="${#lists.isEmpty(proposals)}" class="text-center py-4">
+                                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                                <h6 class="text-muted mt-3">No proposals yet</h6>
+                                <p class="text-muted">Create your first thesis proposal to get started.</p>
+                                <a th:href="@{/teacher/proposals/create}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>Create Proposal
+                                </a>
+                            </div>
+                            
+                            <div th:unless="${#lists.isEmpty(proposals)}">
+                                <div class="row g-3">
+                                    <div class="col-12" th:each="proposal, iterStat : ${proposals}" th:if="${iterStat.index < 4}">
+                                        <div class="border rounded p-3 bg-light">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="fw-bold mb-2">
+                                                        <a th:href="@{/teacher/proposal/{id}(id=${proposal.id})}" 
+                                                           class="text-decoration-none" th:text="${proposal.title}">
+                                                            Proposal Title
+                                                        </a>
+                                                    </h6>
+                                                    <p class="text-muted small mb-2" th:text="${#strings.abbreviate(proposal.goal, 100)}">Goal description...</p>
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-calendar me-1"></i>
+                                                        Created: <span th:text="${#temporals.format(proposal.createdAt, 'MMM dd, yyyy')}">Date</span>
+                                                    </small>
+                                                </div>
+                                                <div class="ms-3">
+                                                    <span th:replace="~{fragments/components :: statusBadge(${proposal.status.name()})}"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supervised Theses -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-book me-2"></i>Supervised Theses
+                            </h5>
+                            <a th:href="@{/teacher/theses}" class="btn btn-sm btn-outline-success">
+                                View All
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div th:if="${#lists.isEmpty(theses)}" class="text-center py-4">
+                                <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                                <h6 class="text-muted mt-3">No active theses</h6>
+                                <p class="text-muted">Theses will appear here when students begin working on approved proposals.</p>
+                            </div>
+                            
+                            <div th:unless="${#lists.isEmpty(theses)}">
+                                <div class="row g-3">
+                                    <div class="col-12" th:each="thesis, iterStat : ${theses}" th:if="${iterStat.index < 4}">
+                                        <div class="border rounded p-3 bg-light">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="fw-bold mb-2">
+                                                        <a th:href="@{/teacher/thesis/{id}(id=${thesis.id})}" 
+                                                           class="text-decoration-none" th:text="${thesis.title}">
+                                                            Thesis Title
+                                                        </a>
+                                                    </h6>
+                                                    <p class="text-muted small mb-2">
+                                                        Student: <span th:text="${thesis.studentName}">Student Name</span>
+                                                    </p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <small class="text-muted" th:if="${thesis.finalGrade}">
+                                                            <i class="bi bi-award me-1"></i>
+                                                            Grade: <span th:text="${thesis.finalGrade}">Grade</span>
+                                                        </small>
+                                                        <span th:replace="~{fragments/components :: statusBadge(${thesis.status.name()})}"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Actions -->
+            <div class="row mt-5">
+                <div class="col">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Actions Required
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Pending Proposals -->
+                                <div class="col-md-4" th:if="${pendingCount > 0}">
+                                    <div class="d-flex align-items-center p-3 bg-warning bg-opacity-10 rounded">
+                                        <div class="me-3">
+                                            <i class="bi bi-clock text-warning" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-bold mb-1" th:text="${pendingCount + ' Pending Proposal' + (pendingCount > 1 ? 's' : '')}">
+                                                Pending Proposals
+                                            </h6>
+                                            <small class="text-muted">Waiting for student applications</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Theses Awaiting Review -->
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center p-3 bg-info bg-opacity-10 rounded">
+                                        <div class="me-3">
+                                            <i class="bi bi-eye text-info" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-bold mb-1">Review Submissions</h6>
+                                            <small class="text-muted">Check for thesis submissions needing review</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Upcoming Defenses -->
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center p-3 bg-success bg-opacity-10 rounded">
+                                        <div class="me-3">
+                                            <i class="bi bi-calendar-event text-success" style="font-size: 2rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-bold mb-1">Upcoming Defenses</h6>
+                                            <small class="text-muted">Schedule and manage thesis defenses</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mt-4">
+                <div class="col">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-lightning me-2"></i>Quick Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <a th:href="@{/teacher/proposals/create}" class="btn btn-primary w-100">
+                                        <i class="bi bi-plus-circle me-2"></i>Create Proposal
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a th:href="@{/teacher/proposals}" class="btn btn-outline-info w-100">
+                                        <i class="bi bi-file-earmark-text me-2"></i>Manage Proposals
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a th:href="@{/teacher/theses}" class="btn btn-outline-success w-100">
+                                        <i class="bi bi-book me-2"></i>View Theses
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a th:href="@{/teacher/reviews}" class="btn btn-outline-warning w-100">
+                                        <i class="bi bi-eye me-2"></i>Review Center
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

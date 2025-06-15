@@ -40,7 +40,7 @@ public class KeycloakGrantedAuthoritiesMapper implements GrantedAuthoritiesMappe
 
         var roles = (Collection<String>) roleInfo.get("roles");
         roles.forEach(roleName -> {
-            mappedAuthorities.add(new SimpleGrantedAuthority("ROLE_" + roleName));
+            mappedAuthorities.add(new SimpleGrantedAuthority("ROLE_" + roleName.toUpperCase()));
         });
     }
 }

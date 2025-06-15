@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Card Component -->
+    <div th:fragment="card(title, content, actions)" class="card shadow-sm">
+        <div class="card-header bg-light" th:if="${title}">
+            <h5 class="card-title mb-0" th:text="${title}">Card Title</h5>
+        </div>
+        <div class="card-body" th:replace="${content}">
+            <p>Default card content</p>
+        </div>
+        <div class="card-footer bg-light" th:if="${actions}" th:replace="${actions}">
+            <!-- Actions go here -->
+        </div>
+    </div>
+
+    <!-- Status Badge -->
+    <span th:fragment="statusBadge(status)" 
+          th:class="${'badge ' + 
+                     (status == 'PENDING' ? 'bg-warning' : 
+                      status == 'APPROVED' ? 'bg-success' : 
+                      status == 'REJECTED' ? 'bg-danger' : 
+                      status == 'WAITING_FOR_REVIEW' ? 'bg-info' : 
+                      status == 'WAITING_FOR_DEFENSE' ? 'bg-primary' : 
+                      status == 'DEFENDED' ? 'bg-success' : 
+                      status == 'FAILED' ? 'bg-danger' : 'bg-secondary')}"
+          th:text="${status}">
+        Status
+    </span>
+
+    <!-- Loading Spinner -->
+    <div th:fragment="spinner" class="d-flex justify-content-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:fragment="emptyState(icon, title, message, action)" class="text-center py-5">
+        <i th:class="${'bi ' + icon + ' text-muted'}" style="font-size: 3rem;"></i>
+        <h4 class="text-muted mt-3" th:text="${title}">No items found</h4>
+        <p class="text-muted" th:text="${message}">There are no items to display.</p>
+        <div th:if="${action}" th:replace="${action}">
+            <!-- Action button goes here -->
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav th:fragment="pagination(page)" aria-label="Page navigation" th:if="${page.totalPages > 1}">
+        <ul class="pagination justify-content-center">
+            <!-- Previous -->
+            <li class="page-item" th:classappend="${!page.hasPrevious()} ? 'disabled'">
+                <a class="page-link" th:href="@{''(page=${page.number > 0 ? page.number - 1 : 0})}" 
+                   th:unless="${!page.hasPrevious()}">Previous</a>
+                <span class="page-link" th:if="${!page.hasPrevious()}">Previous</span>
+            </li>
+            
+            <!-- Page Numbers -->
+            <li class="page-item" 
+                th:each="pageNum : ${#numbers.sequence(0, page.totalPages - 1)}"
+                th:classappend="${pageNum == page.number} ? 'active'">
+                <a class="page-link" th:href="@{''(page=${pageNum})}" th:text="${pageNum + 1}">1</a>
+            </li>
+            
+            <!-- Next -->
+            <li class="page-item" th:classappend="${!page.hasNext()} ? 'disabled'">
+                <a class="page-link" th:href="@{''(page=${page.number + 1})}" 
+                   th:unless="${!page.hasNext()}">Next</a>
+                <span class="page-link" th:if="${!page.hasNext()}">Next</span>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Form Field with Validation -->
+    <div th:fragment="formField(fieldName, label, type, placeholder, required)" class="mb-3">
+        <label th:for="${fieldName}" class="form-label" th:text="${label}">Field Label</label>
+        <input th:type="${type ?: 'text'}" 
+               th:id="${fieldName}" 
+               th:name="${fieldName}"
+               th:placeholder="${placeholder}"
+               th:required="${required}"
+               class="form-control"
+               th:classappend="${#fields.hasErrors(fieldName)} ? 'is-invalid'">
+        <div class="invalid-feedback" th:if="${#fields.hasErrors(fieldName)}" th:errors="*{__${fieldName}__}">
+            Error message
+        </div>
+    </div>
+
+    <!-- Textarea Field with Validation -->
+    <div th:fragment="textareaField(fieldName, label, placeholder, rows, required)" class="mb-3">
+        <label th:for="${fieldName}" class="form-label" th:text="${label}">Field Label</label>
+        <textarea th:id="${fieldName}" 
+                  th:name="${fieldName}"
+                  th:placeholder="${placeholder}"
+                  th:rows="${rows ?: 3}"
+                  th:required="${required}"
+                  class="form-control"
+                  th:classappend="${#fields.hasErrors(fieldName)} ? 'is-invalid'"></textarea>
+        <div class="invalid-feedback" th:if="${#fields.hasErrors(fieldName)}" th:errors="*{__${fieldName}__}">
+            Error message
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div th:fragment="confirmModal(id, title, message, confirmText, confirmAction)" 
+         class="modal fade" th:id="${id}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" th:text="${title}">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p th:text="${message}">Are you sure you want to perform this action?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" th:onclick="${confirmAction}" th:text="${confirmText}">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

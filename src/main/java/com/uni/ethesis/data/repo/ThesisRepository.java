@@ -45,6 +45,9 @@ public interface ThesisRepository extends JpaRepository<Thesis, UUID>, JpaSpecif
     // Count theses by status
     long countByStatus(ThesisStatus status);
     
+    // Find theses by status
+    List<Thesis> findByStatus(ThesisStatus status);
+    
     // Count successfully defended theses by teacher
     @Query("SELECT COUNT(t) FROM Thesis t WHERE t.proposal.teacher.id = :teacherId AND t.status = 'DEFENDED' AND t.finalGrade >= :minPassingGrade")
     long countSuccessfulDefensesByTeacher(@Param("teacherId") UUID teacherId, 

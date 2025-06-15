@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- Back Navigation -->
+            <div class="row mb-3">
+                <div class="col">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a th:href="@{/proposals/browse}" sec:authorize="hasRole('STUDENT')">
+                                    <i class="bi bi-arrow-left me-1"></i>Browse Proposals
+                                </a>
+                                <a th:href="@{/teacher/proposals}" sec:authorize="hasRole('TEACHER')">
+                                    <i class="bi bi-arrow-left me-1"></i>My Proposals
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">Proposal Details</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Proposal Details -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="card-title mb-2" th:text="${proposal.title}">Proposal Title</h4>
+                                    <div class="d-flex gap-3 text-muted small">
+                                        <span>
+                                            <i class="bi bi-person me-1"></i>
+                                            Supervisor: <strong th:text="${proposal.teacherName}">Teacher Name</strong>
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-calendar me-1"></i>
+                                            Posted: <span th:text="${#temporals.format(proposal.createdAt, 'MMM dd, yyyy')}">Date</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <span th:replace="~{fragments/components :: statusBadge(${proposal.status.name()})}"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <!-- Goal Section -->
+                            <div class="mb-4">
+                                <h5 class="fw-bold text-primary">
+                                    <i class="bi bi-bullseye me-2"></i>Research Goal
+                                </h5>
+                                <p class="text-justify" th:text="${proposal.goal}">
+                                    Goal description...
+                                </p>
+                            </div>
+                            
+                            <!-- Objectives Section -->
+                            <div class="mb-4">
+                                <h5 class="fw-bold text-primary">
+                                    <i class="bi bi-list-check me-2"></i>Objectives
+                                </h5>
+                                <div th:utext="${#strings.replace(proposal.objectives, '&#10;', '<br>')}" 
+                                     class="text-justify">
+                                    Objectives description...
+                                </div>
+                            </div>
+                            
+                            <!-- Technology Section -->
+                            <div class="mb-4">
+                                <h5 class="fw-bold text-primary">
+                                    <i class="bi bi-gear me-2"></i>Technologies & Tools
+                                </h5>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge bg-secondary fs-6" 
+                                          th:each="tech : ${#strings.arraySplit(proposal.technology, ',')}"
+                                          th:text="${#strings.trim(tech)}">
+                                        Technology
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Information -->
+                            <div class="mb-4" th:if="${proposal.studentId}">
+                                <h5 class="fw-bold text-primary">
+                                    <i class="bi bi-person-graduate me-2"></i>Student Information
+                                </h5>
+                                <p class="text-muted">
+                                    Assigned to: <strong th:text="${proposal.studentName}">Student Name</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Action Card for Students -->
+                    <div class="card border-0 shadow-sm mb-4" sec:authorize="hasRole('STUDENT')">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-hand-thumbs-up me-2"></i>Apply for this Proposal
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Can Apply -->
+                            <div th:if="${canApply}">
+                                <p class="text-muted mb-3">
+                                    This proposal is available for application. Click below to express your interest 
+                                    and submit your application to the supervisor.
+                                </p>
+                                <form th:action="@{/proposals/{id}/apply(id=${proposal.id})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Are you sure you want to apply for this proposal? You can only apply to one proposal per supervisor.')">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-send me-2"></i>Apply for this Proposal
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Already Applied to Teacher -->
+                            <div th:if="${hasAppliedToTeacher and !canApply}">
+                                <div class="alert alert-warning mb-0">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    You have already applied to a proposal from this supervisor. 
+                                    You cannot apply to multiple proposals from the same teacher.
+                                </div>
+                            </div>
+                            
+                            <!-- Proposal Not Available -->
+                            <div th:if="${proposal.status.name() != 'PENDING' and !canApply and !hasAppliedToTeacher}">
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    This proposal is no longer available for application.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Card for Teachers -->
+                    <div class="card border-0 shadow-sm mb-4" sec:authorize="hasRole('TEACHER')">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-gear me-2"></i>Manage Proposal
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="text-muted">Current Status:</span>
+                                <span th:replace="~{fragments/components :: statusBadge(${proposal.status.name()})}"></span>
+                            </div>
+                            
+                            <div th:if="${proposal.status.name() == 'PENDING'}">
+                                <p class="text-muted small mb-3">
+                                    This proposal is visible to students and available for applications.
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <a th:href="@{/teacher/proposal/{id}/edit(id=${proposal.id})}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-pencil me-1"></i>Edit Proposal
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div th:if="${proposal.status.name() != 'PENDING'}">
+                                <p class="text-muted small mb-0">
+                                    This proposal is no longer accepting applications.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Supervisor Information -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-person-check me-2"></i>Supervisor Information
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 50px; height: 50px;">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1" th:text="${proposal.teacherName}">Teacher Name</h6>
+                                    <small class="text-muted">Faculty Supervisor</small>
+                                </div>
+                            </div>
+                            
+                            <div class="small text-muted">
+                                <div class="mb-2">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    <span th:text="${proposal.teacherEmail}">teacher@university.edu</span>
+                                </div>
+                                <div class="mb-2">
+                                    <i class="bi bi-mortarboard me-2"></i>
+                                    Position: <span th:text="${proposal.teacherPosition}">Professor</span>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-grid" sec:authorize="hasRole('STUDENT')">
+                                <button class="btn btn-outline-secondary btn-sm" disabled>
+                                    <i class="bi bi-chat-dots me-1"></i>Contact Supervisor
+                                </button>
+                                <small class="text-muted mt-1 text-center">
+                                    Apply first to enable contact
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

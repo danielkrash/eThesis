@@ -1,19 +1,16 @@
 package com.uni.ethesis.data.entities;
 
 import java.util.Set;
+import java.util.UUID;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.ColumnDefault;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -22,7 +19,10 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "users")
 @SuperBuilder
 @Entity
-public class User extends BaseEntity {
+public class User extends AuditableEntity {
+    @Id
+    @ColumnDefault("gen_random_uuid()")
+    private UUID id;
     @Column(name = "first_name" , columnDefinition = "text")
     private String firstName;
     @Column(name = "last_name" , columnDefinition = "text")

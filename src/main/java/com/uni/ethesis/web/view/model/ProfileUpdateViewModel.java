@@ -1,7 +1,5 @@
 package com.uni.ethesis.web.view.model;
 
-import java.time.OffsetDateTime;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -18,21 +16,16 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class UserViewModel {
-    private String id;
-    @NotBlank
-    @Size(min = 5, max = 20, message="Min 5, Max 20")
+public class ProfileUpdateViewModel {
+    @NotBlank(message = "First name is required")
+    @Size(min = 2, max = 50, message = "First name must be between 2 and 50 characters")
     private String firstName;
-    @NotBlank
-    @Size(min = 5, max = 20, message="Min 5, Max 20")
+    
+    @NotBlank(message = "Last name is required")
+    @Size(min = 2, max = 50, message = "Last name must be between 2 and 50 characters")
     private String lastName;
-    @NotBlank
-    @Email
+    
+    @NotBlank(message = "Email is required")
+    @Email(message = "Please provide a valid email address")
     private String email;
-    @NotBlank
-    private String role;
-    @NotBlank
-    private OffsetDateTime createdAt;
-    @NotBlank
-    private OffsetDateTime lastModifiedAt;
 }

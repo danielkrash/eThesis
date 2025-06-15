@@ -72,7 +72,6 @@ public class SecurityConfig {
         http.cors(Customizer.withDefaults()) // Ensure CORS is enabled
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/","/public/**" , "/css/**" , "/js/**").permitAll() // Permit access to public resources
-                        .requestMatchers("/api/**").authenticated() // Secure all API endpoints
                         .requestMatchers("/dashboard/**").authenticated()
                         .anyRequest().permitAll()
                 ).oauth2ResourceServer(auth ->

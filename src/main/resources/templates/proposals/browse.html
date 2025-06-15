@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2 class="display-6 fw-bold text-primary">
+                        <i class="bi bi-search me-3"></i>Browse Available Proposals
+                    </h2>
+                    <p class="text-muted">Discover thesis proposals from faculty members and find your perfect research topic.</p>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <form method="get" th:action="@{/proposals/browse}">
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="search" 
+                                   th:value="${searchQuery}"
+                                   placeholder="Search by title, goal, or technology...">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                            <a th:href="@{/proposals/browse}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <span th:text="${#lists.size(proposals)} + ' proposal' + (${#lists.size(proposals)} != 1 ? 's' : '') + ' found'">
+                            0 proposals found
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proposals Grid -->
+            <div class="row">
+                <div class="col-12">
+                    <!-- No proposals found -->
+                    <div th:if="${#lists.isEmpty(proposals)}" class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="text-muted mt-3">No proposals found</h4>
+                        <p class="text-muted" th:if="${searchQuery}">
+                            No proposals match your search criteria "<strong th:text="${searchQuery}"></strong>".
+                            Try different keywords or <a th:href="@{/proposals/browse}">browse all proposals</a>.
+                        </p>
+                        <p class="text-muted" th:unless="${searchQuery}">
+                            There are currently no available proposals. Check back later or contact faculty members directly.
+                        </p>
+                    </div>
+                    
+                    <!-- Proposals List -->
+                    <div th:unless="${#lists.isEmpty(proposals)}">
+                        <div class="row g-4">
+                            <div class="col-lg-6" th:each="proposal : ${proposals}">
+                                <div class="card border-0 shadow-sm h-100 searchable-item">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h5 class="card-title fw-bold" th:text="${proposal.title}">
+                                                Proposal Title
+                                            </h5>
+                                            <span th:replace="~{fragments/components :: statusBadge(${proposal.status.name()})}"></span>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <h6 class="text-muted mb-2">
+                                                <i class="bi bi-bullseye me-1"></i>Goal
+                                            </h6>
+                                            <p class="card-text" th:text="${#strings.abbreviate(proposal.goal, 150)}">
+                                                Goal description...
+                                            </p>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <h6 class="text-muted mb-2">
+                                                <i class="bi bi-list-check me-1"></i>Objectives
+                                            </h6>
+                                            <p class="card-text small" th:text="${#strings.abbreviate(proposal.objectives, 100)}">
+                                                Objectives description...
+                                            </p>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <h6 class="text-muted mb-2">
+                                                <i class="bi bi-gear me-1"></i>Technology
+                                            </h6>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <span class="badge bg-secondary" 
+                                                      th:each="tech : ${#strings.arraySplit(proposal.technology, ',')}"
+                                                      th:text="${#strings.trim(tech)}">
+                                                    Technology
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-person me-1"></i>
+                                                    Supervisor: <span th:text="${proposal.teacherName}">Teacher Name</span>
+                                                </small>
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar me-1"></i>
+                                                    Posted: <span th:text="${#temporals.format(proposal.createdAt, 'MMM dd, yyyy')}">Date</span>
+                                                </small>
+                                            </div>
+                                            <div>
+                                                <a th:href="@{/proposals/{id}(id=${proposal.id})}" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-eye me-1"></i>View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="row mt-5" th:unless="${#lists.isEmpty(proposals)}">
+                <div class="col">
+                    <div class="alert alert-info border-0">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="bi bi-lightbulb" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <h6 class="alert-heading">How to Apply</h6>
+                                <p class="mb-2">
+                                    <strong>1.</strong> Browse through available proposals and find one that matches your interests.
+                                </p>
+                                <p class="mb-2">
+                                    <strong>2.</strong> Click "View Details" to see the full proposal information.
+                                </p>
+                                <p class="mb-2">
+                                    <strong>3.</strong> If you're interested, click "Apply for this Proposal" to submit your application.
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Note:</strong> You can only apply to one proposal per supervisor. Choose wisely!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

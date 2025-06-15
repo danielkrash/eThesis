@@ -14,6 +14,7 @@ import com.uni.ethesis.data.repo.StudentRepository;
 import com.uni.ethesis.data.repo.TeacherRepository;
 import com.uni.ethesis.data.repo.ThesisProposalRepository;
 import com.uni.ethesis.enums.ThesisProposalStatus;
+import com.uni.ethesis.exceptions.InvalidStatusTransitionException;
 import com.uni.ethesis.exceptions.ThesisProposalNotFoundException;
 import com.uni.ethesis.service.ThesisApplicationService;
 import com.uni.ethesis.utils.mappers.ThesisApplicationMapper;
@@ -98,9 +99,40 @@ public class ThesisApplicationServiceImpl implements ThesisApplicationService {
     public ThesisProposalDto updateThesisProposalStatus(UUID id, ThesisProposalStatus status) {
         ThesisProposal proposal = thesisProposalRepository.findById(id)
                 .orElseThrow(() -> new ThesisProposalNotFoundException("Thesis proposal not found with id: " + id));
-        proposal.setStatus(status);
-        ThesisProposal updatedProposal = thesisProposalRepository.save(proposal);
-        return thesisApplicationMapper.thesisProposalToThesisProposalDto(updatedProposal);
+        
+        ThesisProposalStatus currentStatus = proposal.getStatus();
+        
+        // If current status is null, allow transition to any status
+        if (currentStatus == null) {
+            proposal.setStatus(status);
+            ThesisProposal updatedProposal = thesisProposalRepository.save(proposal);
+            return thesisApplicationMapper.thesisProposalToThesisProposalDto(updatedProposal);
+        }
+        
+        // If trying to set PENDING when already PENDING, that's invalid
+        if (currentStatus == ThesisProposalStatus.PENDING && status == ThesisProposalStatus.PENDING) {
+            throw new InvalidStatusTransitionException(
+                String.format("Invalid target status: %s", status.name()));
+        }
+        
+        // Can only change from PENDING to REJECTED or APPROVED
+        if (currentStatus == ThesisProposalStatus.PENDING && 
+            (status == ThesisProposalStatus.REJECTED || status == ThesisProposalStatus.APPROVED)) {
+            proposal.setStatus(status);
+            ThesisProposal updatedProposal = thesisProposalRepository.save(proposal);
+            return thesisApplicationMapper.thesisProposalToThesisProposalDto(updatedProposal);
+        }
+        
+        // Cannot change from REJECTED or APPROVED to anything else
+        if (currentStatus == ThesisProposalStatus.REJECTED || currentStatus == ThesisProposalStatus.APPROVED) {
+            throw new InvalidStatusTransitionException(
+                String.format("Cannot change thesis proposal status from %s to %s",
+                    currentStatus.name(), status.name()));
+        }
+        
+        // Fallback for any other invalid transitions
+        throw new InvalidStatusTransitionException(
+            String.format("Invalid target status: %s", status.name()));
     }
 
     @Override

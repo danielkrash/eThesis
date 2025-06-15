@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
@@ -73,19 +74,19 @@ public class TestDataPopulator {
     }
 
     private void createUsers(TestEntityManager em) {
-        userAlice = User.builder().createdAt(NOW).lastModifiedAt(null)
+        userAlice = User.builder().id(UUID.randomUUID()).createdAt(NOW).lastModifiedAt(null)
                 .email("alice.student@example.com").firstName("Alice").lastName("Wonderland").build();
-        userBob = User.builder().createdAt(NOW).lastModifiedAt(NOW.minusDays(1))
+        userBob = User.builder().id(UUID.randomUUID()).createdAt(NOW).lastModifiedAt(NOW.minusDays(1))
                 .email("bob.student@example.com").firstName("Bob").lastName("Builder").build();
-        userCarlos = User.builder().createdAt(NOW).lastModifiedAt(null)
+        userCarlos = User.builder().id(UUID.randomUUID()).createdAt(NOW).lastModifiedAt(null)
                 .email("carlos.student@example.com").firstName("Carlos").lastName("Santana").build();
-        userCarol = User.builder().createdAt(NOW).lastModifiedAt(null)
+        userCarol = User.builder().id(UUID.randomUUID()).createdAt(NOW).lastModifiedAt(null)
                 .email("carol.teacher@example.com").firstName("Carol").lastName("Danvers").build();
-        userDave = User.builder().createdAt(NOW).lastModifiedAt(NOW.minusDays(2))
+        userDave = User.builder().id(UUID.randomUUID()).createdAt(NOW).lastModifiedAt(NOW.minusDays(2))
                 .email("dave.teacher@example.com").firstName("David").lastName("Banner").build();
-        userEva = User.builder().createdAt(NOW).lastModifiedAt(null)
+        userEva = User.builder().id(UUID.randomUUID()).createdAt(NOW).lastModifiedAt(null)
                 .email("eva.teacher@example.com").firstName("Eva").lastName("Peron").build();
-        userFrank = User.builder().createdAt(NOW).lastModifiedAt(null)
+        userFrank = User.builder().id(UUID.randomUUID()).createdAt(NOW).lastModifiedAt(null)
                 .email("frank.admin@example.com").firstName("Frank").lastName("Castle").build();
 
         em.persist(userAlice);

@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +22,11 @@ public class AuthenticationUtils {
             String subject = jwt.getSubject(); // This is the Keycloak user ID
             return UUID.fromString(subject);
         }
-        
+        if (authentication instanceof OAuth2AuthenticationToken token) {
+            String subject = token.getName(); // This is the Keycloak user ID
+            return UUID.fromString(subject);
+        }
+
         throw new RuntimeException("User not authenticated or not a JWT token");
     }
 

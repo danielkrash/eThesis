@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+    <div class="container my-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a th:href="@{/dashboard}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/dashboard/proposals}">Proposals</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/dashboard/proposals/{id}(id=${proposal.id})}">View Proposal</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Edit</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-edit me-2"></i>Edit Thesis Proposal
+                        </h4>
+                        <p class="mb-0 mt-2 small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            You can only edit proposals that are pending approval.
+                        </p>
+                    </div>
+                    <div class="card-body">
+                        <!-- Success/Error Messages -->
+                        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span th:text="${success}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Form -->
+                        <form th:action="@{/dashboard/proposals/{id}/edit(id=${proposal.id})}" 
+                              th:object="${proposal}"
+                              method="post">
+                            
+                            <!-- Title -->
+                            <div class="mb-3">
+                                <label for="title" class="form-label fw-bold">
+                                    <i class="fas fa-heading me-1"></i>Title *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       th:field="*{title}"
+                                       th:errorclass="is-invalid"
+                                       placeholder="Enter the thesis proposal title">
+                                <div th:if="${#fields.hasErrors('title')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{title}"></div>
+                            </div>
+
+                            <!-- Goal -->
+                            <div class="mb-3">
+                                <label for="goal" class="form-label fw-bold">
+                                    <i class="fas fa-bullseye me-1"></i>Goal *
+                                </label>
+                                <textarea class="form-control" 
+                                          th:field="*{goal}"
+                                          th:errorclass="is-invalid"
+                                          rows="4"
+                                          placeholder="Describe the main goal and purpose of this thesis proposal"></textarea>
+                                <div th:if="${#fields.hasErrors('goal')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{goal}"></div>
+                            </div>
+
+                            <!-- Objectives -->
+                            <div class="mb-3">
+                                <label for="objectives" class="form-label fw-bold">
+                                    <i class="fas fa-list-ul me-1"></i>Objectives *
+                                </label>
+                                <textarea class="form-control" 
+                                          th:field="*{objectives}"
+                                          th:errorclass="is-invalid"
+                                          rows="5"
+                                          placeholder="List the specific objectives and deliverables of this thesis"></textarea>
+                                <div th:if="${#fields.hasErrors('objectives')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{objectives}"></div>
+                            </div>
+
+                            <!-- Technology -->
+                            <div class="mb-4">
+                                <label for="technology" class="form-label fw-bold">
+                                    <i class="fas fa-cogs me-1"></i>Technology Stack *
+                                </label>
+                                <textarea class="form-control" 
+                                          th:field="*{technology}"
+                                          th:errorclass="is-invalid"
+                                          rows="3"
+                                          placeholder="Describe the technologies, tools, and methodologies to be used"></textarea>
+                                <div th:if="${#fields.hasErrors('technology')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{technology}"></div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{/dashboard/proposals/{id}(id=${proposal.id})}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Back to Proposal
+                                </a>
+                                <div>
+                                    <a th:href="@{/dashboard/proposals}" class="btn btn-outline-primary me-2">
+                                        <i class="fas fa-list me-1"></i>My Proposals
+                                    </a>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-save me-1"></i>Update Proposal
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Information Card -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-info-circle text-info me-2"></i>Edit Information
+                        </h6>
+                        <ul class="mb-0 text-muted small">
+                            <li>You can only edit proposals that have a <strong>PENDING</strong> status</li>
+                            <li>Once a proposal is approved or rejected, it cannot be edited</li>
+                            <li>Changes will be saved and the proposal will remain in PENDING status</li>
+                            <li>The teacher will be notified of the changes for review</li>
+                            <li>Make sure all required fields are properly filled</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

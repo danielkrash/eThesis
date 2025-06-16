@@ -15,10 +15,11 @@ import com.uni.ethesis.enums.ReviewConclusion;
 public interface ReviewRepository extends JpaRepository<Review, UUID>, JpaSpecificationExecutor<Review> {
     
     // Find review by thesis ID
-    Optional<Review> findByThesisId(UUID thesisId);
     
     // Find all reviews by teacher
     List<Review> findByTeacherId(UUID teacherId);
+
+    List<Review> findByThesisId(UUID teacherId);
     
     // Find reviews by conclusion
     List<Review> findByConclusion(ReviewConclusion conclusion);

@@ -2,10 +2,12 @@ package com.uni.ethesis.utils.mappers;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
 import com.uni.ethesis.data.dto.ReviewDto;
 import com.uni.ethesis.data.entities.Review;
+import com.uni.ethesis.web.view.model.ThesisReviewViewModel;
 
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
@@ -22,4 +24,30 @@ public interface ReviewMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "lastModifiedAt", ignore = true)
     Review reviewDtoToReview(ReviewDto reviewDto);
+
+    // DTO to ViewModel mapping
+    @Mapping(source = "id", target = "id", qualifiedByName = "uuidToString")
+    @Mapping(source = "teacherId", target = "teacherId", qualifiedByName = "uuidToString")
+    @Mapping(source = "thesisId", target = "thesisId", qualifiedByName = "uuidToString")
+    @Mapping(source = "conclusion", target = "conclusion", qualifiedByName = "conclusionToString")
+    @Mapping(source = "createdAt", target = "createdAt", qualifiedByName = "offsetDateTimeToString")
+    @Mapping(source = "lastModifiedAt", target = "updatedAt", qualifiedByName = "offsetDateTimeToString")
+    @Mapping(target = "comments", ignore = true) // Will be set in controller
+    @Mapping(target = "reviewerName", ignore = true) // Will be set in controller
+    ThesisReviewViewModel reviewDtoToThesisReviewViewModel(ReviewDto reviewDto);
+
+    @Named("uuidToString")
+    default String uuidToString(java.util.UUID uuid) {
+        return uuid != null ? uuid.toString() : null;
+    }
+
+    @Named("conclusionToString")
+    default String conclusionToString(com.uni.ethesis.enums.ReviewConclusion conclusion) {
+        return conclusion != null ? conclusion.toString() : null;
+    }
+
+    @Named("offsetDateTimeToString")
+    default String offsetDateTimeToString(java.time.OffsetDateTime dateTime) {
+        return dateTime != null ? dateTime.toString() : null;
+    }
 }

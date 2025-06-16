@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2 class="display-6 fw-bold text-primary">
+                        <i class="bi bi-file-earmark-text me-3"></i>
+                        <span th:text="${pageTitle}">Proposals</span>
+                    </h2>
+                    <p class="text-muted" th:text="${pageDescription}">
+                        Manage your thesis proposals
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/dashboard}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error Messages -->
+            <div th:if="${error}" class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span th:text="${error}">Error message</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Proposals List -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-ul me-2"></i>
+                                <span th:text="${pageTitle}">Proposals</span>
+                                <span class="badge bg-primary ms-2" th:text="${#lists.size(proposals ?: {})}">0</span>
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <!-- Empty State -->
+                            <div th:if="${#lists.isEmpty(proposals)}" class="text-center py-5">
+                                <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                                <h5 class="text-muted mt-3">No proposals found</h5>
+                                <p class="text-muted">
+                                    <span th:if="${pageTitle == 'Current Proposals'}">You don't have any current proposals at the moment.</span>
+                                    <span th:if="${pageTitle == 'Past Proposals'}">You don't have any completed proposals yet.</span>
+                                    <span th:if="${pageTitle == 'Proposals Needing Approval'}">No proposals are currently awaiting your approval.</span>
+                                </p>
+                            </div>
+
+                            <!-- Proposals Table -->
+                            <div th:unless="${#lists.isEmpty(proposals)}" class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">Title</th>
+                                            <th scope="col">Goal</th>
+                                            <th scope="col">Student</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Created</th>
+                                            <th scope="col">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="proposal : ${proposals}">
+                                            <td>
+                                                <h6 class="fw-bold mb-1" th:text="${proposal.title}">Proposal Title</h6>
+                                                <small class="text-muted" th:text="${#strings.abbreviate(proposal.goal, 50)}">
+                                                    Goal description...
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span th:text="${#strings.abbreviate(proposal.goal, 80)}" class="text-muted">
+                                                    Goal description
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span th:text="${proposal.studentName ?: 'Unassigned'}" class="text-muted">
+                                                    Student Name
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span th:replace="~{fragments/components :: statusBadge(${proposal.status})}"></span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <span th:text="${#temporals.format(proposal.createdAt, 'MMM dd, yyyy')}">Date</span>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a th:href="@{/dashboard/proposals/{id}(id=${proposal.id})}" 
+                                                       class="btn btn-outline-primary" title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <button th:if="${pageTitle == 'Proposals Needing Approval'}" 
+                                                            type="button" class="btn btn-outline-success" 
+                                                            title="Approve Proposal">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                    <button th:if="${pageTitle == 'Proposals Needing Approval'}" 
+                                                            type="button" class="btn btn-outline-danger" 
+                                                            title="Reject Proposal">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-compass me-2"></i>Quick Navigation
+                            </h6>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a th:href="@{/dashboard/proposals/current}" 
+                                   class="btn btn-sm"
+                                   th:classappend="${pageTitle == 'Current Proposals' ? 'btn-info' : 'btn-outline-info'}">
+                                    <i class="bi bi-clock-history me-1"></i>Current
+                                </a>
+                                <a th:href="@{/dashboard/proposals/past}" 
+                                   class="btn btn-sm"
+                                   th:classappend="${pageTitle == 'Past Proposals' ? 'btn-secondary' : 'btn-outline-secondary'}">
+                                    <i class="bi bi-archive me-1"></i>Past
+                                </a>
+                                <a th:href="@{/dashboard/proposals/pending}" 
+                                   class="btn btn-sm"
+                                   th:classappend="${pageTitle == 'Proposals Needing Approval' ? 'btn-warning' : 'btn-outline-warning'}">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Pending
+                                </a>
+                                <a th:href="@{/dashboard/students}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-people me-1"></i>Students
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/custom.js}"></script>
+</body>
+</html>

@@ -163,21 +163,25 @@ public class TestDataPopulator {
 
         thesisProposal1 = ThesisProposal.builder()
                 .createdAt(NOW).lastModifiedAt(null)
+                .department(cs)
                 .goal("Develop an AI for automated grading.").objectives("1. Research existing models. 2. Implement a prototype. 3. Test and evaluate.")
                 .status(ThesisProposalStatus.APPROVED).technology("Python, TensorFlow, NLP").title("AI-Driven Automated Grading System")
                 .student(studentAlice).teacher(teacherCarol).build();
         thesisProposal2 = ThesisProposal.builder()
                 .createdAt(NOW).lastModifiedAt(NOW.minusDays(10))
+                .department(cs)
                 .goal("Explore new cryptographic algorithms.").objectives("1. Study post-quantum crypto. 2. Propose a new scheme.")
                 .status(ThesisProposalStatus.APPROVED).technology("LaTeX, SageMath").title("Post-Quantum Cryptography Analysis")
                 .student(studentBob).teacher(teacherDave).build();
         thesisProposal3 = ThesisProposal.builder()
                 .createdAt(NOW).lastModifiedAt(NOW.minusDays(5))
+                .department(cs)
                 .goal("Statistical analysis of climate data.").objectives("1. Collect data. 2. Apply models. 3. Interpret results.")
                 .status(ThesisProposalStatus.REJECTED).technology("R, Python").title("Climate Change Impact Study")
                 .student(studentAlice).teacher(teacherDave).build();
         thesisProposal4 = ThesisProposal.builder()
                 .createdAt(NOW).lastModifiedAt(null)
+                .department(cs)
                 .goal("Build a simple quantum circuit simulator.").objectives("1. Learn Qiskit. 2. Implement basic gates. 3. Simulate a small algorithm.")
                 .status(ThesisProposalStatus.PENDING).technology("Python, Qiskit").title("Quantum Circuit Simulation")
                 .student(studentCarlos).teacher(teacherEva).build();

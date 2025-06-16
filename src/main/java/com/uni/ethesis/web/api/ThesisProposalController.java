@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.uni.ethesis.data.dto.ThesisProposalDto;
-import com.uni.ethesis.service.ThesisApplicationService;
+import com.uni.ethesis.service.ThesisProposalService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,19 +25,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ThesisProposalController {
 
-    private final ThesisApplicationService thesisApplicationService;
+    private final ThesisProposalService thesisProposalService;
 
     @GetMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
     public ResponseEntity<List<ThesisProposalDto>> getAllThesisProposals() {
-        List<ThesisProposalDto> proposals = thesisApplicationService.getAllThesisProposals();
+        List<ThesisProposalDto> proposals = thesisProposalService.getAllThesisProposals();
         return ResponseEntity.ok(proposals);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
     public ResponseEntity<ThesisProposalDto> getThesisProposal(@PathVariable UUID id) {
-        ThesisProposalDto proposal = thesisApplicationService.getThesisProposalById(id);
+        ThesisProposalDto proposal = thesisProposalService.getThesisProposalById(id);
         return ResponseEntity.ok(proposal);
     }
 
@@ -51,7 +51,7 @@ public class ThesisProposalController {
         // The user info is available in the Authentication object
         String userEmail = authentication.getName();
         
-        ThesisProposalDto created = thesisApplicationService.createThesisProposal(proposalDto);
+        ThesisProposalDto created = thesisProposalService.createThesisProposal(proposalDto);
         return ResponseEntity.ok(created);
     }
 
@@ -61,14 +61,14 @@ public class ThesisProposalController {
             @PathVariable UUID id,
             @RequestBody ThesisProposalDto proposalDto) {
         
-        ThesisProposalDto updated = thesisApplicationService.updateThesisProposal(id, proposalDto);
+        ThesisProposalDto updated = thesisProposalService.updateThesisProposal(id, proposalDto);
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<Void> deleteThesisProposal(@PathVariable UUID id) {
-        thesisApplicationService.deleteThesisProposal(id);
+        thesisProposalService.deleteThesisProposal(id);
         return ResponseEntity.noContent().build();
     }
 }

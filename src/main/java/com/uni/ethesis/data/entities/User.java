@@ -32,7 +32,7 @@ public class User extends AuditableEntity {
     private String email;
     @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY , cascade = CascadeType.ALL)
     private Set<DepartmentAppointment> appointments;
-    @OneToMany(mappedBy = "user", orphanRemoval = false , fetch = FetchType.LAZY , cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", orphanRemoval = true , fetch = FetchType.LAZY , cascade = CascadeType.ALL)
     private Set<UserInDepartment> departments;
     @OneToMany(mappedBy = "user", orphanRemoval = false , cascade = CascadeType.ALL)
     private Set<Comment> comments;

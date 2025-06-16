@@ -29,12 +29,12 @@
                                 <i class="bi bi-box-arrow-in-right me-2"></i>Get Started
                             </a>
                             <a sec:authorize="hasRole('STUDENT')" 
-                               th:href="@{/student/dashboard}" 
+                               th:href="@{/dashboard}" 
                                class="btn btn-light btn-lg">
                                 <i class="bi bi-person-graduate me-2"></i>Student Dashboard
                             </a>
                             <a sec:authorize="hasRole('TEACHER')" 
-                               th:href="@{/teacher/dashboard}" 
+                               th:href="@{/dashboard}" 
                                class="btn btn-light btn-lg">
                                 <i class="bi bi-person-check me-2"></i>Teacher Dashboard
                             </a>
@@ -190,12 +190,12 @@
                                 </p>
                                 <div class="d-flex gap-3 justify-content-center">
                                     <a sec:authorize="hasRole('STUDENT')" 
-                                       th:href="@{/student/dashboard}" 
+                                       th:href="@{/dashboard}" 
                                        class="btn btn-primary">
                                         <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
                                     </a>
                                     <a sec:authorize="hasRole('TEACHER')" 
-                                       th:href="@{/teacher/dashboard}" 
+                                       th:href="@{/dashboard}" 
                                        class="btn btn-primary">
                                         <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
                                     </a>

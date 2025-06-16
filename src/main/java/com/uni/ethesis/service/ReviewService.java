@@ -11,7 +11,7 @@ public interface ReviewService {
     // Basic CRUD operations
     ReviewDto createReview(ReviewDto reviewDto);
     ReviewDto getReviewById(UUID id);
-    ReviewDto getReviewByThesisId(UUID thesisId);
+    List<ReviewDto> getReviewsByThesisId(UUID thesisId);
     List<ReviewDto> getAllReviews();
     List<ReviewDto> getReviewsByTeacherId(UUID teacherId);
     ReviewDto updateReview(UUID id, ReviewDto reviewDto);

@@ -1,5 +1,6 @@
 package com.uni.ethesis.data.dto;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.uni.ethesis.enums.ThesisProposalStatus;
@@ -36,4 +37,10 @@ public class ThesisProposalDto {
 
     @NotNull(message = "Status cannot be null")
     private ThesisProposalStatus status;
+
+    @NotNull
+    private UUID departmentId;
+    
+    private OffsetDateTime createdAt;
+    private OffsetDateTime lastModifiedAt;
 }

@@ -1,5 +1,7 @@
 package com.uni.ethesis.web.view.model;
 
+import java.time.OffsetDateTime;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -30,14 +32,16 @@ public class ThesisProposalViewModel {
 
     private String studentId;
     private String teacherId;
+    private String departmentId;
     private String status;
     
     // Display fields for the view
     private String studentName;
     private String teacherName;
+    private String departmentName;
     private String statusDisplayName;
-    private String createdAt;
-    private String lastModifiedAt;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime lastModifiedAt;
     
     // Additional fields for display logic
     private boolean canEdit;

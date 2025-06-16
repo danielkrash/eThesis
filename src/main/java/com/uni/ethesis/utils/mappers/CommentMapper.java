@@ -9,6 +9,7 @@ import org.mapstruct.factory.Mappers;
 
 import com.uni.ethesis.data.dto.CommentDto;
 import com.uni.ethesis.data.entities.Comment;
+import com.uni.ethesis.web.view.model.CommentViewModel;
 
 @Mapper(componentModel = "spring")
 public interface CommentMapper {
@@ -31,6 +32,22 @@ public interface CommentMapper {
 
     List<CommentDto> commentsToCommentDtos(List<Comment> comments);
 
+    // DTO to ViewModel mapping
+    @Mapping(source = "id", target = "id", qualifiedByName = "uuidToString")
+    @Mapping(source = "userId", target = "userId", qualifiedByName = "uuidToString")
+    @Mapping(source = "reviewId", target = "reviewId", qualifiedByName = "uuidToString")
+    @Mapping(source = "createdAt", target = "createdAt", qualifiedByName = "localDateTimeToString")
+    @Mapping(source = "updatedAt", target = "updatedAt", qualifiedByName = "localDateTimeToString")
+    @Mapping(target = "commenterName", ignore = true) // Will be set in controller
+    CommentViewModel commentDtoToCommentViewModel(CommentDto commentDto);
+
+    List<CommentViewModel> commentDtosToCommentViewModels(List<CommentDto> commentDtos);
+
+    @Named("uuidToString")
+    default String uuidToString(java.util.UUID uuid) {
+        return uuid != null ? uuid.toString() : null;
+    }
+
     @Named("mapUserFullName")
     default String mapUserFullName(com.uni.ethesis.data.entities.User user) {
         if (user == null) {
@@ -49,5 +66,10 @@ public interface CommentMapper {
     @Named("mapOffsetDateTimeToLocalDateTime")
     default java.time.LocalDateTime mapOffsetDateTimeToLocalDateTime(java.time.OffsetDateTime offsetDateTime) {
         return offsetDateTime != null ? offsetDateTime.toLocalDateTime() : null;
+    }
+
+    @Named("localDateTimeToString")
+    default String localDateTimeToString(java.time.LocalDateTime localDateTime) {
+        return localDateTime != null ? localDateTime.toString() : null;
     }
 }

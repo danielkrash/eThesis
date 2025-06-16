@@ -200,7 +200,7 @@ public class UserSynchronizationSuccessHandler implements AuthenticationSuccessH
                 try {
                     Teacher teacher = Teacher.builder()
                             .user(user)
-                            .position(position.isEmpty() ? TeacherPosition.LECTURER : TeacherPosition.valueOf(position.toUpperCase()))
+                            .position(position == null ? TeacherPosition.LECTURER : TeacherPosition.valueOf(position.toUpperCase()))
                             .build();
                     
                     teacherRepository.saveAndFlush(teacher);

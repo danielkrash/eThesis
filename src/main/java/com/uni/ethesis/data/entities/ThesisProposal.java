@@ -34,6 +34,9 @@ public class ThesisProposal extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "text")
     private ThesisProposalStatus status;
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "department_id")
+    private Department department;
     @OneToOne(mappedBy = "proposal" , cascade = CascadeType.ALL)
     private Thesis thesis;
 }

@@ -13,4 +13,7 @@ public interface ThesisProposalRepository extends JpaRepository<ThesisProposal, 
     List<ThesisProposal> findByStudentId(UUID studentId);
     List<ThesisProposal> findByTeacherId(UUID teacherId);
     List<ThesisProposal> findByStatus(ThesisProposalStatus status);
+    List<ThesisProposal> findByDepartmentId(UUID departmentId);
+    List<ThesisProposal> findByDepartmentIdAndStatus(UUID departmentId , ThesisProposalStatus status);
+
 }

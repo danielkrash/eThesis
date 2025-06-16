@@ -70,10 +70,10 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public ReviewDto getReviewByThesisId(UUID thesisId) {
-        Review review = reviewRepository.findByThesisId(thesisId)
-                .orElseThrow(() -> new ReviewNotFoundException("Review not found for thesis id: " + thesisId));
-        return reviewMapper.reviewToReviewDto(review);
+    public List<ReviewDto> getReviewsByThesisId(UUID thesisId) {
+        return reviewRepository.findByThesisId(thesisId).stream()
+                .map(reviewMapper::reviewToReviewDto)
+                .collect(Collectors.toList());
     }
 
     @Override

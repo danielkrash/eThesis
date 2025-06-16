@@ -6,14 +6,21 @@ import org.mapstruct.Mapping;
 import com.uni.ethesis.data.dto.StudentDto;
 import com.uni.ethesis.data.entities.Student;
 
+/**
+ * Unified mapper for Student entity and DTO conversions.
+ * No ViewModel mappings since StudentViewModel doesn't exist.
+ */
 @Mapper(componentModel = "spring")
 public interface StudentMapper {
 
+    // ============================================
+    // Entity ↔ DTO Mappings
+    // ============================================
+    
     @Mapping(target = "firstName", source = "user.firstName")
     @Mapping(target = "lastName", source = "user.lastName")
     // No explicit mapping needed for universityId if field names match in DTO and Entity
     // MapStruct handles direct field name matches automatically.
-    // @Mapping(target = "universityId", source = "universityId") // This would be redundant
     StudentDto studentToStudentDto(Student student);
 
     @Mapping(target = "user", ignore = true) // User mapping is complex, handled in service

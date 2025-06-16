@@ -134,6 +134,11 @@ public class ThesisServiceImpl implements ThesisService {
     }
 
     @Override
+    public boolean thesisExists(UUID id) {
+        return thesisRepository.existsById(id);
+    }
+
+    @Override
     @Transactional
     public ThesisDto uploadThesisPdf(UUID thesisId, MultipartFile pdfFile) {
         Thesis thesis = thesisRepository.findById(thesisId)

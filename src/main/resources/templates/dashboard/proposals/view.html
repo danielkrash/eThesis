@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+    
+    <main class="container-fluid py-4">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}">
+                            <i class="bi bi-house me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard/proposals}">Proposals</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">View Proposal</li>
+                </ol>
+            </nav>
+
+            <!-- Success Message -->
+            <div th:if="${param.updated}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                Proposal has been updated successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Main Proposal Card -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-start">
+                            <div>
+                                <h4 class="card-title mb-2" th:text="${proposal.title}">Proposal Title</h4>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="badge rounded-pill fs-6"
+                                          th:classappend="${proposal.status == 'PENDING' ? 'bg-warning text-dark' : 
+                                                         (proposal.status == 'APPROVED' ? 'bg-success' : 
+                                                         (proposal.status == 'REJECTED' ? 'bg-danger' : 'bg-secondary'))}"
+                                          th:text="${proposal.status}">
+                                        Status
+                                    </span>
+                                    <small class="text-muted" th:if="${proposal.createdAt}">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        Created: <span th:text="${#temporals.format(proposal.createdAt, 'MMM dd, yyyy HH:mm')}">Date</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <!-- Edit button for PENDING proposals (only for owner) -->
+                                <a th:if="${proposal.status == 'PENDING' && user.id == proposal.studentId}"
+                                   th:href="@{/dashboard/proposals/{id}/edit(id=${proposal.id})}" 
+                                   class="btn btn-warning btn-sm me-2">
+                                    <i class="bi bi-pencil me-1"></i>Edit
+                                </a>
+                                <!-- Begin thesis work button for APPROVED proposals (only for owner) -->
+                                <form th:if="${proposal.status == 'APPROVED' && user.id == proposal.studentId && !hasThesis}"
+                                      th:action="@{/dashboard/proposals/{id}/create-thesis(id=${proposal.id})}" 
+                                      method="post" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-success btn-sm me-2">
+                                        <i class="bi bi-play-circle me-1"></i>Begin to work on thesis
+                                    </button>
+                                </form>
+                                <!-- View thesis button for APPROVED proposals with existing thesis -->
+                                <a th:if="${proposal.status == 'APPROVED' && user.id == proposal.studentId && hasThesis}"
+                                   th:href="@{/dashboard/{thesisId}(thesisId=${thesis.id})}" 
+                                   class="btn btn-outline-success btn-sm me-2">
+                                    <i class="bi bi-eye me-1"></i>View thesis work
+                                </a>
+                                <a th:href="@{/dashboard/proposals}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-arrow-left me-1"></i>Back to List
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Goal Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-bullseye me-2"></i>Goal
+                                </h6>
+                                <p class="mb-0" th:text="${proposal.goal}">
+                                    Proposal goal description...
+                                </p>
+                            </div>
+
+                            <!-- Objectives Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-list-check me-2"></i>Objectives
+                                </h6>
+                                <div th:utext="${#strings.replace(proposal.objectives, '&#10;', '<br>')}" class="mb-0">
+                                    Proposal objectives...
+                                </div>
+                            </div>
+
+                            <!-- Technology Stack Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-gear me-2"></i>Technology Stack
+                                </h6>
+                                <div th:utext="${#strings.replace(proposal.technology, '&#10;', '<br>')}" class="mb-0">
+                                    Technology stack description...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Proposal Details Sidebar -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-info-circle me-2"></i>Proposal Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3" th:if="${proposal.studentName}">
+                                <small class="text-muted d-block">Student</small>
+                                <span th:text="${proposal.studentName}">Student Name</span>
+                            </div>
+                            
+                            <div class="mb-3" th:if="${proposal.teacherName}">
+                                <small class="text-muted d-block">Supervisor</small>
+                                <span th:text="${proposal.teacherName}">Teacher Name</span>
+                            </div>
+                            
+                            <div class="mb-3" th:if="${proposal.departmentName}">
+                                <small class="text-muted d-block">Department</small>
+                                <span th:text="${proposal.departmentName}">Department Name</span>
+                            </div>
+
+                            <div class="mb-3" th:if="${proposal.lastModifiedAt}">
+                                <small class="text-muted d-block">Last Modified</small>
+                                <span th:text="${#temporals.format(proposal.lastModifiedAt, 'MMM dd, yyyy HH:mm')}">Date</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thesis Work Card (for approved proposals) -->
+                    <div th:if="${proposal.status == 'APPROVED' && user.id == proposal.studentId}" class="card shadow-sm mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-book me-2"></i>Thesis Work
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text small text-muted mb-3">
+                                Your proposal has been approved! You can now start working on your thesis.
+                            </p>
+                            <div class="d-grid gap-2">
+                                <form th:if="${!hasThesis}" 
+                                      th:action="@{/dashboard/proposals/{id}/create-thesis(id=${proposal.id})}" 
+                                      method="post">
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="bi bi-play-circle me-1"></i>Start Thesis Work
+                                    </button>
+                                </form>
+                                <a th:if="${hasThesis}" 
+                                   th:href="@{/dashboard/{thesisId}(thesisId=${thesis.id})}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-eye me-1"></i>View Thesis
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-lightning me-2"></i>Quick Actions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a th:href="@{/dashboard/proposals}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-list me-1"></i>My Proposals
+                                </a>
+                                <a th:href="@{/dashboard/proposals/browse}" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-search me-1"></i>Browse Available
+                                </a>
+                                <a th:href="@{/dashboard/proposals/create}" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i>Create New
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/custom.js}"></script>
+</body>
+</html>

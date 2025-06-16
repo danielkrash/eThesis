@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+    
+    <main class="container-fluid py-4">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}">
+                            <i class="bi bi-house me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Thesis Work</li>
+                </ol>
+            </nav>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                File uploaded successfully!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Thesis Information Card -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-start">
+                            <div>
+                                <h4 class="card-title mb-2" th:text="${thesis.title}">Thesis Title</h4>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="badge rounded-pill fs-6"
+                                          th:classappend="${thesis.status == 'PENDING' ? 'bg-warning text-dark' : 
+                                                         (thesis.status == 'APPROVED' ? 'bg-success' : 
+                                                         (thesis.status == 'REJECTED' ? 'bg-danger' : 
+                                                         (thesis.status == 'DEFENDED' ? 'bg-primary' : 'bg-secondary')))}"
+                                          th:text="${thesis.status}">
+                                        Status
+                                    </span>
+                                    <small class="text-muted" th:if="${thesis.createdAt}">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        Started: <span th:text="${thesis.createdAt}">Date</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <!-- Upload button for thesis owner -->
+                                <a th:if="${canUpload && (thesis.pdfPath == null || thesis.pdfPath.isEmpty())}"
+                                   th:href="@{/dashboard/{id}/upload(id=${thesis.id})}" 
+                                   class="btn btn-success btn-sm me-2">
+                                    <i class="bi bi-upload me-1"></i>Upload PDF
+                                </a>
+                                <!-- Replace PDF button -->
+                                <a th:if="${canUpload && thesis.pdfPath != null && !thesis.pdfPath.isEmpty()}"
+                                   th:href="@{/dashboard/{id}/upload(id=${thesis.id})}" 
+                                   class="btn btn-warning btn-sm me-2">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Replace PDF
+                                </a>
+                                <!-- Review button for supervisors -->
+                                <a th:if="${canReview}"
+                                   th:href="@{/dashboard/{id}/review(id=${thesis.id})}" 
+                                   class="btn btn-primary btn-sm me-2">
+                                    <i class="bi bi-clipboard-check me-1"></i>Add Review
+                                </a>
+                                <a th:href="@{/dashboard}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Goal Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-bullseye me-2"></i>Goal
+                                </h6>
+                                <p class="mb-0" th:text="${thesis.goal}">
+                                    Thesis goal description...
+                                </p>
+                            </div>
+
+                            <!-- Objectives Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-list-check me-2"></i>Objectives
+                                </h6>
+                                <div th:utext="${#strings.replace(thesis.objectives, '&#10;', '<br>')}" class="mb-0">
+                                    Thesis objectives...
+                                </div>
+                            </div>
+
+                            <!-- Technology Stack Section -->
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-gear me-2"></i>Technology Stack
+                                </h6>
+                                <div th:utext="${#strings.replace(thesis.technology, '&#10;', '<br>')}" class="mb-0">
+                                    Technology stack description...
+                                </div>
+                            </div>
+
+                            <!-- PDF Section -->
+                            <div th:if="${thesis.pdfPath != null && !thesis.pdfPath.isEmpty()}" class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>Thesis Document
+                                </h6>
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark-pdf text-danger fs-2 me-3"></i>
+                                            <div>
+                                                <h6 class="mb-1">Thesis Document</h6>
+                                                <small class="text-muted">PDF Document</small>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <a th:href="@{/files/{path}(path=${thesis.pdfPath})}" 
+                                               class="btn btn-outline-primary btn-sm me-2" 
+                                               target="_blank">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                            <a th:href="@{/files/{path}(path=${thesis.pdfPath})}" 
+                                               class="btn btn-primary btn-sm" 
+                                               download>
+                                                <i class="bi bi-download me-1"></i>Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div th:if="${thesis.reviews != null && !thesis.reviews.isEmpty()}" class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-chat-square-text me-2"></i>Reviews & Comments
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div th:each="review : ${thesis.reviews}" class="border-bottom pb-3 mb-3 last:border-bottom-0 last:pb-0 last:mb-0">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1" th:text="${review.reviewerName}">Reviewer Name</h6>
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            <span th:text="${review.createdAt}">Review Date</span>
+                                        </small>
+                                    </div>
+                                    <span class="badge rounded-pill"
+                                          th:classappend="${review.conclusion == 'ACCEPTED' ? 'bg-success' : 
+                                                         (review.conclusion == 'REJECTED' ? 'bg-danger' : 'bg-secondary')}"
+                                          th:text="${review.conclusion}">
+                                        Status
+                                    </span>
+                                </div>
+                                <div th:if="${review.content}" class="mt-2">
+                                    <p class="mb-0" th:text="${review.content}">Review content...</p>
+                                </div>
+                                
+                                <!-- Comments on this review -->
+                                <div th:if="${review.comments != null && !review.comments.isEmpty()}" class="mt-3 ps-3 border-start border-light">
+                                    <h6 class="mb-2 text-muted">Comments:</h6>
+                                    <div th:each="comment : ${review.comments}" class="mb-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <small class="fw-bold" th:text="${comment.commenterName}">Commenter Name</small>
+                                            <small class="text-muted" th:text="${comment.createdAt}">Comment Date</small>
+                                        </div>
+                                        <p class="mb-0 small" th:text="${comment.content}">Comment content...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Thesis Details Sidebar -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-info-circle me-2"></i>Thesis Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3" th:if="${thesis.studentName}">
+                                <small class="text-muted d-block">Student</small>
+                                <span th:text="${thesis.studentName}">Student Name</span>
+                            </div>
+                            
+                            <div class="mb-3" th:if="${thesis.teacherName}">
+                                <small class="text-muted d-block">Supervisor</small>
+                                <span th:text="${thesis.teacherName}">Teacher Name</span>
+                            </div>
+                            
+                            <div class="mb-3" th:if="${thesis.status}">
+                                <small class="text-muted d-block">Current Status</small>
+                                <span th:text="${thesis.status}">Status</span>
+                            </div>
+
+                            <div class="mb-3" th:if="${thesis.lastModifiedAt}">
+                                <small class="text-muted d-block">Last Updated</small>
+                                <span th:text="${thesis.lastModifiedAt}">Date</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-lightning me-2"></i>Quick Actions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a th:if="${isOwner}" 
+                                   th:href="@{/dashboard/proposals/{id}(id=${proposal.id})}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-file-earmark-text me-1"></i>View Proposal
+                                </a>
+                                <a th:if="${isSupervisor}" 
+                                   th:href="@{/dashboard/proposals}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-list me-1"></i>My Supervised Proposals
+                                </a>
+                                <a th:if="${isAdmin}" 
+                                   th:href="@{/admin/theses}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-gear me-1"></i>Admin Panel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/custom.js}"></script>
+</body>
+</html>

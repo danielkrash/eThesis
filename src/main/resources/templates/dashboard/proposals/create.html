@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+    <div class="container my-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a th:href="@{/dashboard}">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Create Thesis Proposal</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-plus-circle me-2"></i>Create New Thesis Proposal
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Success/Error Messages -->
+                        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span th:text="${success}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        
+                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Form -->
+                        <form th:action="@{/dashboard/proposals/create}" 
+                              th:object="${createProposalForm}"
+                              method="post">
+                            
+                            <!-- Title -->
+                            <div class="mb-3">
+                                <label for="title" class="form-label fw-bold">
+                                    <i class="fas fa-heading me-1"></i>Title *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       th:field="*{title}"
+                                       th:errorclass="is-invalid"
+                                       placeholder="Enter the thesis proposal title">
+                                <div th:if="${#fields.hasErrors('title')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{title}"></div>
+                            </div>
+
+                            <!-- Department Selection -->
+                            <div class="mb-3">
+                                <label for="departmentId" class="form-label fw-bold">
+                                    <i class="fas fa-building me-1"></i>Department *
+                                </label>
+                                <select class="form-select" 
+                                        th:field="*{departmentId}"
+                                        th:errorclass="is-invalid">
+                                    <option value="">Select Department</option>
+                                    <option th:each="dept : ${departments}" 
+                                            th:value="${dept.id}" 
+                                            th:text="${dept.name}"></option>
+                                </select>
+                                <div th:if="${#fields.hasErrors('departmentId')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{departmentId}"></div>
+                                <div class="form-text">Select a department you are enrolled in.</div>
+                            </div>
+
+                            <!-- Teacher Selection -->
+                            <div class="mb-3">
+                                <label for="teacherId" class="form-label fw-bold">
+                                    <i class="fas fa-user-tie me-1"></i>Preferred Teacher *
+                                </label>
+                                <select class="form-select" 
+                                        th:field="*{teacherId}"
+                                        th:errorclass="is-invalid">
+                                    <option value="">Select Teacher</option>
+                                    <option th:each="teacher : ${teachers}" 
+                                            th:value="${teacher.id}" 
+                                            th:text="${teacher.fullName}"></option>
+                                </select>
+                                <div th:if="${#fields.hasErrors('teacherId')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{teacherId}"></div>
+                                <div class="form-text">Choose a teacher you would like to work with.</div>
+                            </div>
+
+                            <!-- Goal -->
+                            <div class="mb-3">
+                                <label for="goal" class="form-label fw-bold">
+                                    <i class="fas fa-bullseye me-1"></i>Goal *
+                                </label>
+                                <textarea class="form-control" 
+                                          th:field="*{goal}"
+                                          th:errorclass="is-invalid"
+                                          rows="4"
+                                          placeholder="Describe the main goal and purpose of this thesis proposal"></textarea>
+                                <div th:if="${#fields.hasErrors('goal')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{goal}"></div>
+                            </div>
+
+                            <!-- Objectives -->
+                            <div class="mb-3">
+                                <label for="objectives" class="form-label fw-bold">
+                                    <i class="fas fa-list-ul me-1"></i>Objectives *
+                                </label>
+                                <textarea class="form-control" 
+                                          th:field="*{objectives}"
+                                          th:errorclass="is-invalid"
+                                          rows="5"
+                                          placeholder="List the specific objectives and deliverables of this thesis"></textarea>
+                                <div th:if="${#fields.hasErrors('objectives')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{objectives}"></div>
+                            </div>
+
+                            <!-- Technology -->
+                            <div class="mb-4">
+                                <label for="technology" class="form-label fw-bold">
+                                    <i class="fas fa-cogs me-1"></i>Technology Stack *
+                                </label>
+                                <textarea class="form-control" 
+                                          th:field="*{technology}"
+                                          th:errorclass="is-invalid"
+                                          rows="3"
+                                          placeholder="Describe the technologies, tools, and methodologies to be used"></textarea>
+                                <div th:if="${#fields.hasErrors('technology')}" 
+                                     class="invalid-feedback" 
+                                     th:errors="*{technology}"></div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{/dashboard}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i>Submit Proposal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Information Card -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-info-circle text-info me-2"></i>Important Information
+                        </h6>
+                        <ul class="mb-0 text-muted small">
+                            <li>You can only have one active proposal per teacher</li>
+                            <li>Your proposal will be reviewed by the selected teacher</li>
+                            <li>The status will be set to "PENDING" after submission</li>
+                            <li>Make sure you are enrolled in the selected department</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

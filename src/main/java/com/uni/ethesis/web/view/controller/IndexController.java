@@ -9,6 +9,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import com.uni.ethesis.service.UserViewService;
+import com.uni.ethesis.web.view.model.UserViewModel;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,15 +19,23 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @RequiredArgsConstructor
 public class IndexController {
+    
+    private final UserViewService userViewService;
     @GetMapping("/")
     public String showIndex(Model model, Authentication auth) {
-        // If user is authenticated, redirect to dashboard
-        if(auth != null && auth.isAuthenticated()){
-            return "redirect:/dashboard";
+        model.addAttribute("title", "University Thesis Portal");
+        
+        // Add user information if authenticated
+        if (auth != null && auth.isAuthenticated()) {
+            try {
+                UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+                model.addAttribute("user", user);
+            } catch (Exception e) {
+                log.warn("Could not fetch user information for authenticated user: {}", e.getMessage());
+                // Continue without user info - template will handle gracefully
+            }
         }
         
-        // If not authenticated, show the public index page
-        model.addAttribute("title", "University Thesis Portal");
         return "index";
     }
 

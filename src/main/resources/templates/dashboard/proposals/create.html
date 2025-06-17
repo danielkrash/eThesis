@@ -26,6 +26,19 @@
                         </h4>
                     </div>
                     <div class="card-body">
+                        <!-- Informational Message -->
+                        <div class="alert alert-info border-0 mb-4">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-info-circle me-2"></i>Proposal Creation Guidelines
+                            </h6>
+                            <p class="mb-2">You can create a new thesis proposal when:</p>
+                            <ul class="mb-0">
+                                <li>You don't have any pending or approved proposals currently active</li>
+                                <li>Your previous proposals were rejected (you can try again)</li>
+                                <li>Your previous thesis work has been completed (defended or failed)</li>
+                            </ul>
+                        </div>
+
                         <!-- Success/Error Messages -->
                         <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
                             <i class="fas fa-check-circle me-2"></i>
@@ -36,6 +49,17 @@
                         <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <span th:text="${error}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <!-- Validation Errors -->
+                        <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Validation Issues
+                            </h6>
+                            <ul class="mb-0">
+                                <li th:each="error : ${#fields.globalErrors()}" th:text="${error}">Global error</li>
+                            </ul>
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
 
@@ -89,12 +113,14 @@
                                     <option value="">Select Teacher</option>
                                     <option th:each="teacher : ${teachers}" 
                                             th:value="${teacher.id}" 
-                                            th:text="${teacher.fullName}"></option>
+                                            th:text="${teacher.firstName + ' ' + teacher.lastName}"></option>
                                 </select>
                                 <div th:if="${#fields.hasErrors('teacherId')}" 
                                      class="invalid-feedback" 
                                      th:errors="*{teacherId}"></div>
-                                <div class="form-text">Choose a teacher you would like to work with.</div>
+                                <div class="form-text">
+                                    Choose a teacher you would like to work with. You can reapply to the same teacher if previous proposals were rejected.
+                                </div>
                             </div>
 
                             <!-- Goal -->

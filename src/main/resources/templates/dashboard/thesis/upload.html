@@ -16,7 +16,7 @@
                         </a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a th:href="@{/dashboard/{id}(id=${thesis.id})}">Thesis Work</a>
+                        <a th:href="@{/dashboard/thesis/{id}(id=${thesis.id})}">Thesis Work</a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">Upload Document</li>
                 </ol>
@@ -52,7 +52,7 @@
                             </div>
 
                             <!-- Upload Form -->
-                            <form th:action="@{/dashboard/{id}/upload(id=${thesis.id})}" 
+                            <form th:action="@{/dashboard/thesis/{id}/upload(id=${thesis.id})}" 
                                   method="post" 
                                   enctype="multipart/form-data"
                                   class="needs-validation" 
@@ -93,7 +93,7 @@
 
                                 <!-- Form Actions -->
                                 <div class="d-flex justify-content-between">
-                                    <a th:href="@{/dashboard/{id}(id=${thesis.id})}" class="btn btn-outline-secondary">
+                                    <a th:href="@{/dashboard/thesis/{id}(id=${thesis.id})}" class="btn btn-outline-secondary">
                                         <i class="bi bi-arrow-left me-1"></i>Cancel
                                     </a>
                                     <button type="submit" class="btn btn-success">

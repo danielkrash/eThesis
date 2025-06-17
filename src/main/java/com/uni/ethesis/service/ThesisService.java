@@ -9,7 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.uni.ethesis.data.dto.ThesisDto;
 import com.uni.ethesis.enums.ThesisStatus;
-import com.uni.ethesis.web.view.model.ThesisViewModel;
 
 public interface ThesisService {
     
@@ -68,4 +67,19 @@ public interface ThesisService {
      * @return List of theses ready for defense
      */
     List<ThesisDto> findThesesReadyForDefense();
+    
+    /**
+     * Get all theses by status
+     * @param status The thesis status to filter by
+     * @return List of theses with the given status
+     */
+    List<ThesisDto> getThesesByStatus(ThesisStatus status);
+    
+    /**
+     * Get theses by status and department
+     * @param status The thesis status to filter by
+     * @param departmentId The department ID to filter by
+     * @return List of theses with the given status and department
+     */
+    List<ThesisDto> getThesesByStatusAndDepartment(ThesisStatus status, UUID departmentId);
 }

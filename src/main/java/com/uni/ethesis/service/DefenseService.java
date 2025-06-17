@@ -23,4 +23,8 @@ public interface DefenseService {
     // Query methods
     List<DefenseDto> getDefensesByLocation(String location);
     long countDefensesInPeriod(Date startDate, Date endDate);
+    
+    // Department-related methods
+    List<DefenseDto> getDefensesByDepartmentId(UUID departmentId);
+    DefenseDto createDefenseWithDepartments(DefenseDto defenseDto, List<UUID> departmentIds);
 }

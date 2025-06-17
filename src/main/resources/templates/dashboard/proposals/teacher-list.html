@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2 class="display-6 fw-bold text-primary">
+                        <i class="bi bi-file-earmark-text me-3"></i>
+                        <span th:text="${pageTitle}">All Supervised Proposals</span>
+                    </h2>
+                    <p class="text-muted" th:text="${pageDescription}">
+                        All thesis proposals you are supervising or have supervised
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/dashboard}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error Messages -->
+            <div th:if="${error}" class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span th:text="${error}">Error message</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-funnel me-2"></i>Filter & Sort Proposals
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="get" th:action="@{/dashboard/proposals}">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label for="search" class="form-label">Search</label>
+                                        <input type="text" class="form-control" id="search" name="search" 
+                                               th:value="${currentSearch}" placeholder="Title, goal, technology...">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="form-select" id="status" name="status">
+                                            <option value="">All Statuses</option>
+                                            <option th:each="status : ${availableStatuses}" 
+                                                    th:value="${status.name()}" 
+                                                    th:text="${status.name()}"
+                                                    th:selected="${currentStatus == status.name()}">Status</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="sortBy" class="form-label">Sort By</label>
+                                        <select class="form-select" id="sortBy" name="sortBy">
+                                            <option value="createdAt" th:selected="${currentSortBy == 'createdAt'}">Created Date</option>
+                                            <option value="lastModifiedAt" th:selected="${currentSortBy == 'lastModifiedAt'}">Last Modified</option>
+                                            <option value="title" th:selected="${currentSortBy == 'title'}">Title</option>
+                                            <option value="status" th:selected="${currentSortBy == 'status'}">Status</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="sortDir" class="form-label">Order</label>
+                                        <select class="form-select" id="sortDir" name="sortDir">
+                                            <option value="desc" th:selected="${currentSortDir == 'desc'}">Newest First</option>
+                                            <option value="asc" th:selected="${currentSortDir == 'asc'}">Oldest First</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary me-2">
+                                            <i class="bi bi-search me-1"></i>Apply Filters
+                                        </button>
+                                        <a th:href="@{/dashboard/proposals}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Clear
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Navigation -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-compass me-2"></i>Quick Navigation
+                            </h6>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a th:href="@{/dashboard/proposals}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-list me-1"></i>All Proposals
+                                </a>
+                                <a th:href="@{/dashboard/proposals/current}" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-clock-history me-1"></i>Current
+                                </a>
+                                <a th:href="@{/dashboard/proposals/past}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-archive me-1"></i>Past
+                                </a>
+                                <a th:href="@{/dashboard/proposals/pending}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Pending Review
+                                </a>
+                                <a th:href="@{/dashboard/students}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-people me-1"></i>My Students
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proposals List -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-ul me-2"></i>
+                                <span th:text="${pageTitle}">All Supervised Proposals</span>
+                                <span class="badge bg-primary ms-2" th:text="${#lists.size(proposals ?: {})}">0</span>
+                            </h5>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary" onclick="toggleView('table')">
+                                    <i class="bi bi-table"></i> Table
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="toggleView('cards')">
+                                    <i class="bi bi-grid-3x3-gap"></i> Cards
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <!-- Empty State -->
+                            <div th:if="${#lists.isEmpty(proposals)}" class="text-center py-5">
+                                <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                                <h5 class="text-muted mt-3">No proposals found</h5>
+                                <p class="text-muted">
+                                    No thesis proposals match your current filters.
+                                </p>
+                                <a th:href="@{/dashboard/proposals}" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
+                                </a>
+                            </div>
+
+                            <!-- Table View -->
+                            <div id="tableView" th:unless="${#lists.isEmpty(proposals)}" class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">Title</th>
+                                            <th scope="col">Student</th>
+                                            <th scope="col">Department</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Created</th>
+                                            <th scope="col">Last Modified</th>
+                                            <th scope="col">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="proposal : ${proposals}">
+                                            <td>
+                                                <h6 class="fw-bold mb-1" th:text="${proposal.title}">Proposal Title</h6>
+                                                <small class="text-muted" th:text="${#strings.abbreviate(proposal.goal, 60)}">
+                                                    Goal description...
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-person-circle text-muted me-2"></i>
+                                                    <span th:text="${proposal.studentName ?: 'Unassigned'}" class="text-muted">
+                                                        Student Name
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted" th:text="${proposal.departmentName ?: 'Unknown'}">
+                                                    Department
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span th:replace="~{fragments/components :: statusBadge(${proposal.status})}"></span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <span th:text="${#temporals.format(proposal.createdAt, 'MMM dd, yyyy')}">Date</span>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <span th:if="${proposal.lastModifiedAt}" 
+                                                          th:text="${#temporals.format(proposal.lastModifiedAt, 'MMM dd, yyyy')}">Date</span>
+                                                    <span th:unless="${proposal.lastModifiedAt}">-</span>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a th:href="@{/dashboard/proposals/{id}(id=${proposal.id})}" 
+                                                       class="btn btn-outline-primary" title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <!-- Show review button for PENDING proposals -->
+                                                    <a th:if="${proposal.status == 'PENDING'}"
+                                                       th:href="@{/dashboard/proposals/{id}/review(id=${proposal.id})}" 
+                                                       class="btn btn-outline-warning" title="Review Proposal">
+                                                        <i class="bi bi-clipboard-check"></i>
+                                                    </a>
+                                                    <!-- Show thesis link for APPROVED proposals that have a thesis -->
+                                                    <a th:if="${proposal.status == 'APPROVED' and proposal.hasThesis}"
+                                                       th:href="@{/dashboard/thesis/{thesisId}(thesisId=${proposal.thesisId})}" 
+                                                       class="btn btn-outline-success" title="View Thesis">
+                                                        <i class="bi bi-book"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Cards View (Hidden by default) -->
+                            <div id="cardsView" th:unless="${#lists.isEmpty(proposals)}" class="row g-3 p-3" style="display: none;">
+                                <div class="col-md-6 col-lg-4" th:each="proposal : ${proposals}">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-header bg-light d-flex justify-content-between align-items-start">
+                                            <h6 class="card-title mb-0" th:text="${#strings.abbreviate(proposal.title, 40)}">
+                                                Proposal Title
+                                            </h6>
+                                            <span th:replace="~{fragments/components :: statusBadge(${proposal.status})}"></span>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="card-text text-muted small" 
+                                               th:text="${#strings.abbreviate(proposal.goal, 120)}">
+                                                Goal description...
+                                            </p>
+                                            <div class="row text-center">
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Student</small>
+                                                    <strong class="small" th:text="${#strings.abbreviate(proposal.studentName ?: 'Unassigned', 20)}">
+                                                        Student Name
+                                                    </strong>
+                                                </div>
+                                                <div class="col-6">
+                                                    <small class="text-muted d-block">Department</small>
+                                                    <strong class="small" th:text="${#strings.abbreviate(proposal.departmentName ?: 'Unknown', 20)}">
+                                                        Department
+                                                    </strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">
+                                                    <span th:text="${#temporals.format(proposal.createdAt, 'MMM dd')}">Date</span>
+                                                </small>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a th:href="@{/dashboard/proposals/{id}(id=${proposal.id})}" 
+                                                       class="btn btn-outline-primary btn-sm" title="View">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a th:if="${proposal.status == 'PENDING'}"
+                                                       th:href="@{/dashboard/proposals/{id}/review(id=${proposal.id})}" 
+                                                       class="btn btn-outline-warning btn-sm" title="Review">
+                                                        <i class="bi bi-clipboard-check"></i>
+                                                    </a>
+                                                    <a th:if="${proposal.status == 'APPROVED' and proposal.hasThesis}"
+                                                       th:href="@{/dashboard/thesis/{thesisId}(thesisId=${proposal.thesisId})}" 
+                                                       class="btn btn-outline-success btn-sm" title="Thesis">
+                                                        <i class="bi bi-book"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/custom.js}"></script>
+    
+    <!-- Custom Script for View Toggle -->
+    <script>
+        function toggleView(viewType) {
+            const tableView = document.getElementById('tableView');
+            const cardsView = document.getElementById('cardsView');
+            const buttons = document.querySelectorAll('[onclick^="toggleView"]');
+            
+            // Remove active class from all buttons
+            buttons.forEach(btn => btn.classList.remove('btn-secondary'));
+            buttons.forEach(btn => btn.classList.add('btn-outline-secondary'));
+            
+            if (viewType === 'table') {
+                tableView.style.display = 'block';
+                cardsView.style.display = 'none';
+                event.target.classList.remove('btn-outline-secondary');
+                event.target.classList.add('btn-secondary');
+            } else {
+                tableView.style.display = 'none';
+                cardsView.style.display = 'block';
+                event.target.classList.remove('btn-outline-secondary');
+                event.target.classList.add('btn-secondary');
+            }
+            
+            // Store preference in localStorage
+            localStorage.setItem('proposalViewType', viewType);
+        }
+        
+        // Load saved view preference
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedView = localStorage.getItem('proposalViewType') || 'table';
+            toggleView(savedView);
+        });
+    </script>
+</body>
+</html>

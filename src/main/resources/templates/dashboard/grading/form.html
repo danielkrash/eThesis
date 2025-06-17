@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body class="d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+
+    <!-- Main Content -->
+    <main class="flex-grow-1">
+        <div class="container mt-4">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2 class="display-6 fw-bold text-primary">
+                        <i class="bi bi-award me-3"></i>Grade Thesis Defense
+                    </h2>
+                    <p class="text-muted">
+                        Evaluate the thesis defense and provide your feedback
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/dashboard/grading}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Grading List
+                    </a>
+                </div>
+            </div>
+
+            <!-- Alert Messages -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Thesis Information Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-file-earmark-text me-2"></i>Thesis Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${thesis == null}" class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Thesis information not available
+                    </div>
+                    <div th:if="${thesis != null}" class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Title:</strong> <span th:text="${gradingSession.proposalTitle ?: 'Not Available'}">Thesis Title</span></p>
+                            <p class="mb-1"><strong>Student:</strong> <span th:text="${gradingSession.studentName ?: 'Not Available'}">Student Name</span></p>
+                            <p class="mb-1"><strong>Status:</strong> <span th:text="${thesis.status}">Status</span></p>
+                            <p class="mb-3"><strong>Current Grade:</strong> 
+                                <span th:if="${thesis.finalGrade != null}" th:text="${thesis.finalGrade}" class="badge bg-info">Final Grade</span>
+                                <span th:if="${thesis.finalGrade == null}" class="badge bg-secondary">Not Graded Yet</span>
+                            </p>
+                            
+                            <div th:if="${thesis.pdfPath != null}">
+                                <a th:href="@{'/uploads/thesis/' + ${thesis.pdfPath}}" 
+                                   target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-file-pdf me-1"></i>View Thesis PDF
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Defense Date:</strong> 
+                                <span th:text="${gradingSession.dateAndTime != null ? #temporals.format(gradingSession.dateAndTime, 'dd MMM yyyy') : 'Not Scheduled'}">Defense Date</span>
+                            </p>
+                            <p class="mb-1"><strong>Defense Time:</strong> 
+                                <span th:text="${gradingSession.dateAndTime != null ? #temporals.format(gradingSession.dateAndTime, 'HH:mm') : 'Not Scheduled'}">Defense Time</span>
+                            </p>
+                            <p class="mb-3"><strong>Committee Status:</strong> 
+                                <span th:text="${gradedMembersCount + ' of ' + totalCommitteeMembers + ' members have graded'}">0 of 3 members have graded</span>
+                            </p>
+                            
+                            <div th:if="${allGraded}" class="alert alert-success p-2">
+                                <i class="bi bi-check-circle me-1"></i>All committee members have submitted grades
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grading Form -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>Defense Evaluation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/dashboard/grading/{id}(id=${gradingSession.id})}" method="post">
+                        <div class="mb-4">
+                            <label for="grade" class="form-label">Grade (0-100) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="grade" name="grade" 
+                                       min="0" max="100" required
+                                       th:value="${currentGrade}">
+                                <span class="input-group-text">/100</span>
+                            </div>
+                            <div class="form-text">
+                                Enter a score between 0-100. This will be converted to a final grade using the institutional grading scale.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="thoughts" class="form-label">Evaluation Notes <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="thoughts" name="thoughts" rows="5" required
+                                      placeholder="Enter your evaluation, comments, and feedback about the thesis defense..."
+                                      th:text="${currentThoughts}"></textarea>
+                            <div class="form-text">
+                                Provide detailed feedback about the thesis presentation, student's knowledge, and any recommendations.
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Submit Evaluation
+                            </button>
+                            <a th:href="@{/dashboard/grading}" class="btn btn-outline-secondary ms-2">
+                                <i class="bi bi-x me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

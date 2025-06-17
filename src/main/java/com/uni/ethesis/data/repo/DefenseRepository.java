@@ -25,4 +25,14 @@ public interface DefenseRepository extends JpaRepository<Defense, UUID>, JpaSpec
     // Count defenses in period
     @Query("SELECT COUNT(d) FROM Defense d WHERE d.date BETWEEN :startDate AND :endDate")
     long countDefensesInPeriod(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    
+    // Find defenses by department
+    @Query("SELECT d FROM Defense d JOIN d.defenses dd WHERE dd.department.id = :departmentId")
+    List<Defense> findByDepartmentId(@Param("departmentId") UUID departmentId);
+    
+    // Find defenses by department and date range
+    @Query("SELECT d FROM Defense d JOIN d.defenses dd WHERE dd.department.id = :departmentId AND d.date BETWEEN :startDate AND :endDate")
+    List<Defense> findByDepartmentIdAndDateBetween(@Param("departmentId") UUID departmentId, 
+                                                   @Param("startDate") Date startDate, 
+                                                   @Param("endDate") Date endDate);
 }

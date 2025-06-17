@@ -13,10 +13,7 @@ import com.uni.ethesis.web.view.model.UserViewModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Controller responsible for student management functionality.
- * This is separate from the dashboard to follow Single Responsibility Principle.
- */
+
 @Slf4j
 @Controller
 @RequestMapping("/dashboard/students")
@@ -34,11 +31,9 @@ public class StudentController {
         }
 
         try {
-            // Get user information using UserViewService
             UserViewModel user = userViewService.getCurrentUserViewModel(auth);
             model.addAttribute("user", user);
 
-            // For now, we'll just show a placeholder page
             // TODO: Implement student management functionality
             model.addAttribute("pageTitle", "My Students");
             model.addAttribute("pageDescription", "Manage students under your supervision");

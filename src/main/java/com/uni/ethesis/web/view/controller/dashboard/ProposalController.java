@@ -97,10 +97,14 @@ public class ProposalController {
     // === PROPOSAL LISTING METHODS (moved from DashboardController) ===
     
     @GetMapping
-    @PreAuthorize("hasRole('STUDENT')")
-    public String showStudentProposals(Model model, Authentication auth) {
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    public String showProposals(Model model, Authentication auth, 
+                               @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+                               @RequestParam(required = false, defaultValue = "desc") String sortDir,
+                               @RequestParam(required = false) String status,
+                               @RequestParam(required = false) String search) {
         if (auth == null || !auth.isAuthenticated()) {
-            log.warn("Unauthenticated user trying to access student proposals");
+            log.warn("Unauthenticated user trying to access proposals");
             return "redirect:/";
         }
 
@@ -109,31 +113,175 @@ public class ProposalController {
             UserViewModel user = userViewService.getCurrentUserViewModel(auth);
             model.addAttribute("user", user);
 
-            // Load all proposals for student (current)
-            List<ThesisProposalDto> studentProposalDtos = thesisProposalService
-                    .getThesisProposalsByStudentId(AuthenticationUtils.getCurrentUserId());
+            List<ThesisProposalDto> proposalDtos;
+            String pageTitle;
+            String pageDescription;
+
+            if (user.getRole().contains("student")) {
+                // Load all proposals for student
+                proposalDtos = thesisProposalService
+                        .getThesisProposalsByStudentId(AuthenticationUtils.getCurrentUserId());
+                pageTitle = "My Proposals";
+                pageDescription = "All your thesis proposals and their current status";
+            } else if (user.getRole().contains("teacher")) {
+                // Load all proposals for teacher (supervised proposals)
+                proposalDtos = thesisProposalService
+                        .getThesisProposalsByTeacherId(AuthenticationUtils.getCurrentUserId());
+                pageTitle = "All Supervised Proposals";
+                pageDescription = "All thesis proposals you are supervising or have supervised";
+            } else {
+                // Admin can see all proposals
+                proposalDtos = thesisProposalService.getAllThesisProposals();
+                pageTitle = "All Proposals";
+                pageDescription = "All thesis proposals in the system";
+            }
+
+            // Apply status filter if provided
+            if (status != null && !status.trim().isEmpty()) {
+                try {
+                    ThesisProposalStatus statusEnum = ThesisProposalStatus.valueOf(status.toUpperCase());
+                    proposalDtos = proposalDtos.stream()
+                            .filter(p -> p.getStatus() == statusEnum)
+                            .toList();
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid status filter: {}", status);
+                }
+            }
+
+            // Apply search filter if provided
+            if (search != null && !search.trim().isEmpty()) {
+                String searchLower = search.toLowerCase();
+                proposalDtos = proposalDtos.stream()
+                        .filter(p -> p.getTitle().toLowerCase().contains(searchLower) ||
+                                   p.getGoal().toLowerCase().contains(searchLower) ||
+                                   (p.getTechnology() != null && p.getTechnology().toLowerCase().contains(searchLower)))
+                        .toList();
+            }
+
+            // Sort proposals
+            proposalDtos = sortProposals(proposalDtos, sortBy, sortDir);
             
-            List<ThesisProposalViewModel> studentProposals = studentProposalDtos.stream()
+            List<ThesisProposalViewModel> proposals = proposalDtos.stream()
                     .map(thesisProposalMapper::toViewModel)
                     .toList();
-            
-            model.addAttribute("proposals", studentProposals);
-            model.addAttribute("pageTitle", "My Proposals");
-            model.addAttribute("pageDescription", "All your thesis proposals and their current status");
 
-            log.info("Student proposals loaded for: {}", user.getEmail());
-            return "dashboard/proposals/student-list";
+            // Populate additional information for all proposals
+            for (ThesisProposalViewModel proposal : proposals) {
+                ThesisProposalDto proposalDto = proposalDtos.stream()
+                        .filter(dto -> dto.getId().toString().equals(proposal.getId()))
+                        .findFirst()
+                        .orElse(null);
+                
+                if (proposalDto != null) {
+                    // Set student name
+                    if (proposalDto.getStudentId() != null) {
+                        try {
+                            UserDto studentUser = userService.getUserById(proposalDto.getStudentId());
+                            proposal.setStudentName(studentUser.getFirstName() + " " + studentUser.getLastName());
+                        } catch (Exception e) {
+                            proposal.setStudentName("Student " + proposalDto.getStudentId().toString().substring(0, 8));
+                        }
+                    }
+                    
+                    // Set teacher name
+                    if (proposalDto.getTeacherId() != null) {
+                        try {
+                            UserDto teacherUser = userService.getUserById(proposalDto.getTeacherId());
+                            proposal.setTeacherName(teacherUser.getFirstName() + " " + teacherUser.getLastName());
+                        } catch (Exception e) {
+                            proposal.setTeacherName("Teacher " + proposalDto.getTeacherId().toString().substring(0, 8));
+                        }
+                    }
+                    
+                    // Set department name
+                    if (proposalDto.getDepartmentId() != null) {
+                        try {
+                            DepartmentDto departmentDto = departmentService.getDepartmentById(proposalDto.getDepartmentId());
+                            proposal.setDepartmentName(departmentDto.getName());
+                        } catch (Exception e) {
+                            proposal.setDepartmentName("Unknown Department");
+                        }
+                    }
+                    
+                    // Set thesis information for APPROVED proposals
+                    if (proposalDto.getStatus().name().equals("APPROVED") && proposalDto.getStudentId() != null) {
+                        try {
+                            ThesisDto thesisDto = thesisService.getThesisByProposalId(proposalDto.getId());
+                            if (thesisDto != null) {
+                                proposal.setThesisId(thesisDto.getId().toString());
+                                proposal.setHasThesis(true);
+                            } else {
+                                proposal.setHasThesis(false);
+                            }
+                        } catch (Exception e) {
+                            proposal.setHasThesis(false);
+                        }
+                    } else {
+                        proposal.setHasThesis(false);
+                    }
+                }
+            }
+            
+            model.addAttribute("proposals", proposals);
+            model.addAttribute("pageTitle", pageTitle);
+            model.addAttribute("pageDescription", pageDescription);
+            
+            // Add filter and sort parameters to model
+            model.addAttribute("currentSortBy", sortBy);
+            model.addAttribute("currentSortDir", sortDir);
+            model.addAttribute("currentStatus", status);
+            model.addAttribute("currentSearch", search);
+            
+            // Add available statuses for filter dropdown
+            model.addAttribute("availableStatuses", ThesisProposalStatus.values());
+
+            log.info("All proposals loaded for user: {} (role: {})", user.getEmail(), user.getRole());
+            
+            // Use different templates based on role for better UX
+            if (user.getRole().contains("student")) {
+                return "dashboard/proposals/student-list";
+            } else {
+                return "dashboard/proposals/teacher-list";
+            }
 
         } catch (Exception e) {
-            log.error("Error loading student proposals", e);
-            model.addAttribute("error", "Failed to load your proposals");
+            log.error("Error loading proposals", e);
+            model.addAttribute("error", "Failed to load proposals");
             return "dashboard/main";
         }
     }
 
+    private List<ThesisProposalDto> sortProposals(List<ThesisProposalDto> proposals, String sortBy, String sortDir) {
+        java.util.Comparator<ThesisProposalDto> comparator;
+        
+        switch (sortBy.toLowerCase()) {
+            case "title":
+                comparator = java.util.Comparator.comparing(ThesisProposalDto::getTitle, String.CASE_INSENSITIVE_ORDER);
+                break;
+            case "status":
+                comparator = java.util.Comparator.comparing(p -> p.getStatus().name());
+                break;
+            case "lastmodifiedat":
+                comparator = java.util.Comparator.comparing(ThesisProposalDto::getLastModifiedAt, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                break;
+            case "createdat":
+            default:
+                comparator = java.util.Comparator.comparing(ThesisProposalDto::getCreatedAt, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                break;
+        }
+        
+        if ("desc".equalsIgnoreCase(sortDir)) {
+            comparator = comparator.reversed();
+        }
+        
+        return proposals.stream()
+                .sorted(comparator)
+                .toList();
+    }
+
     @GetMapping("/current")
-    @PreAuthorize("hasRole('STUDENT')")
-    public String showStudentCurrentProposals(Model model, Authentication auth) {
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    public String showCurrentProposals(Model model, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) {
             log.warn("Unauthenticated user trying to access current proposals");
             return "redirect:/";
@@ -144,25 +292,111 @@ public class ProposalController {
             UserViewModel user = userViewService.getCurrentUserViewModel(auth);
             model.addAttribute("user", user);
 
-            // Load current (active) proposals for student - pending, approved, in_progress
-            List<ThesisProposalDto> currentProposalDtos = thesisProposalService
-                    .getThesisProposalsByStudentId(AuthenticationUtils.getCurrentUserId())
-                    .stream()
-                    .filter(p -> p.getStatus().name().equals("PENDING") || 
-                               p.getStatus().name().equals("APPROVED") || 
-                               p.getStatus().name().equals("IN_PROGRESS"))
-                    .toList();
+            List<ThesisProposalDto> currentProposalDtos;
+            String pageTitle;
+            String pageDescription;
+
+            if (user.getRole().contains("student")) {
+                // Load current (active) proposals for student - pending, approved, in_progress
+                currentProposalDtos = thesisProposalService
+                        .getThesisProposalsByStudentId(AuthenticationUtils.getCurrentUserId())
+                        .stream()
+                        .filter(p -> p.getStatus().name().equals("PENDING") || 
+                                   p.getStatus().name().equals("APPROVED") || 
+                                   p.getStatus().name().equals("IN_PROGRESS"))
+                        .toList();
+                pageTitle = "My Current Proposals";
+                pageDescription = "Your active thesis proposals that are pending, approved or in progress";
+            } else if (user.getRole().contains("teacher")) {
+                // Load current (active) proposals for teacher - all approved and in_progress proposals they supervise
+                currentProposalDtos = thesisProposalService
+                        .getThesisProposalsByTeacherId(AuthenticationUtils.getCurrentUserId())
+                        .stream()
+                        .filter(p -> p.getStatus().name().equals("APPROVED") || 
+                                   p.getStatus().name().equals("IN_PROGRESS"))
+                        .toList();
+                pageTitle = "Currently Supervised Proposals";
+                pageDescription = "Thesis proposals you are currently supervising";
+            } else {
+                // Admin can see all current proposals
+                currentProposalDtos = thesisProposalService
+                        .getAllThesisProposals()
+                        .stream()
+                        .filter(p -> p.getStatus().name().equals("PENDING") || 
+                                   p.getStatus().name().equals("APPROVED") || 
+                                   p.getStatus().name().equals("IN_PROGRESS"))
+                        .toList();
+                pageTitle = "All Current Proposals";
+                pageDescription = "All active thesis proposals in the system";
+            }
             
             List<ThesisProposalViewModel> currentProposals = currentProposalDtos.stream()
                     .map(thesisProposalMapper::toViewModel)
                     .toList();
             
+            // Populate additional information
+            for (ThesisProposalViewModel proposal : currentProposals) {
+                ThesisProposalDto proposalDto = currentProposalDtos.stream()
+                        .filter(dto -> dto.getId().toString().equals(proposal.getId()))
+                        .findFirst()
+                        .orElse(null);
+                
+                if (proposalDto != null) {
+                    // Set student name
+                    if (proposalDto.getStudentId() != null) {
+                        try {
+                            UserDto studentUser = userService.getUserById(proposalDto.getStudentId());
+                            proposal.setStudentName(studentUser.getFirstName() + " " + studentUser.getLastName());
+                        } catch (Exception e) {
+                            proposal.setStudentName("Student " + proposalDto.getStudentId().toString().substring(0, 8));
+                        }
+                    }
+                    
+                    // Set teacher name
+                    if (proposalDto.getTeacherId() != null) {
+                        try {
+                            UserDto teacherUser = userService.getUserById(proposalDto.getTeacherId());
+                            proposal.setTeacherName(teacherUser.getFirstName() + " " + teacherUser.getLastName());
+                        } catch (Exception e) {
+                            proposal.setTeacherName("Teacher " + proposalDto.getTeacherId().toString().substring(0, 8));
+                        }
+                    }
+                    
+                    // Set department name
+                    if (proposalDto.getDepartmentId() != null) {
+                        try {
+                            DepartmentDto departmentDto = departmentService.getDepartmentById(proposalDto.getDepartmentId());
+                            proposal.setDepartmentName(departmentDto.getName());
+                        } catch (Exception e) {
+                            proposal.setDepartmentName("Unknown Department");
+                        }
+                    }
+                    
+                    // Set thesis information for APPROVED proposals
+                    if (proposalDto.getStatus().name().equals("APPROVED") && proposalDto.getStudentId() != null) {
+                        try {
+                            ThesisDto thesisDto = thesisService.getThesisByProposalId(proposalDto.getId());
+                            if (thesisDto != null) {
+                                proposal.setThesisId(thesisDto.getId().toString());
+                                proposal.setHasThesis(true);
+                            } else {
+                                proposal.setHasThesis(false);
+                            }
+                        } catch (Exception e) {
+                            proposal.setHasThesis(false);
+                        }
+                    } else {
+                        proposal.setHasThesis(false);
+                    }
+                }
+            }
+            
             model.addAttribute("proposals", currentProposals);
-            model.addAttribute("pageTitle", "Current Proposals");
-            model.addAttribute("pageDescription", "Your active thesis proposals that are pending, approved or in progress");
+            model.addAttribute("pageTitle", pageTitle);
+            model.addAttribute("pageDescription", pageDescription);
 
-            log.info("Current proposals loaded for student: {}", user.getEmail());
-            return "dashboard/proposals/student-list";
+            log.info("Current proposals loaded for user: {} (role: {})", user.getEmail(), user.getRole());
+            return "dashboard/proposals/list";
 
         } catch (Exception e) {
             log.error("Error loading current proposals", e);
@@ -172,8 +406,8 @@ public class ProposalController {
     }
 
     @GetMapping("/past")
-    @PreAuthorize("hasRole('STUDENT')")
-    public String showStudentPastProposals(Model model, Authentication auth) {
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    public String showPastProposals(Model model, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) {
             log.warn("Unauthenticated user trying to access past proposals");
             return "redirect:/";
@@ -184,38 +418,209 @@ public class ProposalController {
             UserViewModel user = userViewService.getCurrentUserViewModel(auth);
             model.addAttribute("user", user);
 
-            // Get the student's thesis (if exists)
-            try {
-                ThesisDto studentThesis = thesisService.getThesisByStudentId(AuthenticationUtils.getCurrentUserId());
-                
-                // Check if thesis is in a "past" state (DEFENDED or FAILED)
-                if (studentThesis != null && 
-                    (studentThesis.getStatus() == ThesisStatus.DEFENDED || 
-                     studentThesis.getStatus() == ThesisStatus.FAILED)) {
+            List<ThesisProposalViewModel> pastProposals = new java.util.ArrayList<>();
+            String pageTitle;
+            String pageDescription;
+
+            if (user.getRole().contains("student")) {
+                // Get the student's thesis (if exists)
+                try {
+                    ThesisDto studentThesis = thesisService.getThesisByStudentId(AuthenticationUtils.getCurrentUserId());
                     
-                    // Get the proposal from the thesis
-                    ThesisProposalDto proposalDto = thesisProposalService.getThesisProposalById(studentThesis.getProposalId());
-                    ThesisProposalViewModel proposalViewModel = thesisProposalMapper.toViewModel(proposalDto);
-                    
-                    model.addAttribute("proposals", List.of(proposalViewModel));
-                } else {
-                    model.addAttribute("proposals", List.of());
+                    // Check if thesis is in a "past" state (DEFENDED or FAILED)
+                    if (studentThesis != null && 
+                        (studentThesis.getStatus() == ThesisStatus.DEFENDED || 
+                         studentThesis.getStatus() == ThesisStatus.FAILED)) {
+                        
+                        // Get the proposal from the thesis
+                        ThesisProposalDto proposalDto = thesisProposalService.getThesisProposalById(studentThesis.getProposalId());
+                        ThesisProposalViewModel proposalViewModel = thesisProposalMapper.toViewModel(proposalDto);
+                        pastProposals.add(proposalViewModel);
+                    }
+                } catch (Exception e) {
+                    // Student might not have a thesis yet
+                    log.debug("No thesis found for student: {}", user.getEmail());
                 }
-            } catch (Exception e) {
-                // Student might not have a thesis yet
-                log.debug("No thesis found for student: {}", user.getEmail());
-                model.addAttribute("proposals", List.of());
+                pageTitle = "Past Theses";
+                pageDescription = "Your completed theses that have been defended or failed";
+                
+            } else if (user.getRole().contains("teacher")) {
+                // Get all theses supervised by this teacher that are completed
+                List<ThesisDto> completedTheses = thesisService.findThesesByTeacherId(AuthenticationUtils.getCurrentUserId())
+                        .stream()
+                        .filter(thesis -> thesis.getStatus() == ThesisStatus.DEFENDED || 
+                                        thesis.getStatus() == ThesisStatus.FAILED)
+                        .toList();
+                
+                for (ThesisDto thesis : completedTheses) {
+                    try {
+                        ThesisProposalDto proposalDto = thesisProposalService.getThesisProposalById(thesis.getProposalId());
+                        ThesisProposalViewModel proposalViewModel = thesisProposalMapper.toViewModel(proposalDto);
+                        
+                        // Set student name
+                        if (proposalDto.getStudentId() != null) {
+                            try {
+                                UserDto studentUser = userService.getUserById(proposalDto.getStudentId());
+                                proposalViewModel.setStudentName(studentUser.getFirstName() + " " + studentUser.getLastName());
+                            } catch (Exception e) {
+                                proposalViewModel.setStudentName("Student " + proposalDto.getStudentId().toString().substring(0, 8));
+                            }
+                        }
+                        
+                        pastProposals.add(proposalViewModel);
+                    } catch (Exception e) {
+                        log.warn("Could not load proposal for thesis {}: {}", thesis.getId(), e.getMessage());
+                    }
+                }
+                pageTitle = "Past Supervised Theses";
+                pageDescription = "Completed theses you have supervised that have been defended or failed";
+                
+            } else {
+                // Admin can see all past theses
+                List<ThesisDto> allCompletedTheses = thesisService.getAllTheses()
+                        .stream()
+                        .filter(thesis -> thesis.getStatus() == ThesisStatus.DEFENDED || 
+                                        thesis.getStatus() == ThesisStatus.FAILED)
+                        .toList();
+                
+                for (ThesisDto thesis : allCompletedTheses) {
+                    try {
+                        ThesisProposalDto proposalDto = thesisProposalService.getThesisProposalById(thesis.getProposalId());
+                        ThesisProposalViewModel proposalViewModel = thesisProposalMapper.toViewModel(proposalDto);
+                        
+                        // Set student and teacher names
+                        if (proposalDto.getStudentId() != null) {
+                            try {
+                                UserDto studentUser = userService.getUserById(proposalDto.getStudentId());
+                                proposalViewModel.setStudentName(studentUser.getFirstName() + " " + studentUser.getLastName());
+                            } catch (Exception e) {
+                                proposalViewModel.setStudentName("Student " + proposalDto.getStudentId().toString().substring(0, 8));
+                            }
+                        }
+                        
+                        if (proposalDto.getTeacherId() != null) {
+                            try {
+                                UserDto teacherUser = userService.getUserById(proposalDto.getTeacherId());
+                                proposalViewModel.setTeacherName(teacherUser.getFirstName() + " " + teacherUser.getLastName());
+                            } catch (Exception e) {
+                                proposalViewModel.setTeacherName("Teacher " + proposalDto.getTeacherId().toString().substring(0, 8));
+                            }
+                        }
+                        
+                        pastProposals.add(proposalViewModel);
+                    } catch (Exception e) {
+                        log.warn("Could not load proposal for thesis {}: {}", thesis.getId(), e.getMessage());
+                    }
+                }
+                pageTitle = "All Past Theses";
+                pageDescription = "All completed theses in the system that have been defended or failed";
             }
             
-            model.addAttribute("pageTitle", "Past Theses");
-            model.addAttribute("pageDescription", "Your completed theses that have been defended or failed");
+            model.addAttribute("proposals", pastProposals);
+            model.addAttribute("pageTitle", pageTitle);
+            model.addAttribute("pageDescription", pageDescription);
 
-            log.info("Past proposals loaded for student: {}", user.getEmail());
-            return "dashboard/proposals/student-list";
+            log.info("Past proposals loaded for user: {} (role: {})", user.getEmail(), user.getRole());
+            return "dashboard/proposals/list";
 
         } catch (Exception e) {
             log.error("Error loading past proposals", e);
             model.addAttribute("error", "Failed to load past proposals");
+            return "dashboard/main";
+        }
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public String showPendingProposals(Model model, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to access pending proposals");
+            return "redirect:/";
+        }
+
+        try {
+            // Get user information using UserViewService
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            model.addAttribute("user", user);
+
+            List<ThesisProposalDto> pendingProposalDtos;
+            String pageTitle;
+            String pageDescription;
+
+            if (user.getRole().contains("teacher")) {
+                // Load pending proposals assigned to this teacher for review
+                pendingProposalDtos = thesisProposalService
+                        .getThesisProposalsByTeacherId(AuthenticationUtils.getCurrentUserId())
+                        .stream()
+                        .filter(p -> p.getStatus() == ThesisProposalStatus.PENDING)
+                        .toList();
+                pageTitle = "Pending Proposals for Review";
+                pageDescription = "Thesis proposals assigned to you that are awaiting your review and approval";
+            } else {
+                // Admin can see all pending proposals
+                pendingProposalDtos = thesisProposalService
+                        .getThesisProposalsByStatus(ThesisProposalStatus.PENDING);
+                pageTitle = "All Pending Proposals";
+                pageDescription = "All thesis proposals in the system awaiting review and approval";
+            }
+            
+            List<ThesisProposalViewModel> pendingProposals = pendingProposalDtos.stream()
+                    .map(thesisProposalMapper::toViewModel)
+                    .toList();
+            
+            // Populate additional information
+            for (ThesisProposalViewModel proposal : pendingProposals) {
+                ThesisProposalDto proposalDto = pendingProposalDtos.stream()
+                        .filter(dto -> dto.getId().toString().equals(proposal.getId()))
+                        .findFirst()
+                        .orElse(null);
+                
+                if (proposalDto != null) {
+                    // Set student name
+                    if (proposalDto.getStudentId() != null) {
+                        try {
+                            UserDto studentUser = userService.getUserById(proposalDto.getStudentId());
+                            proposal.setStudentName(studentUser.getFirstName() + " " + studentUser.getLastName());
+                        } catch (Exception e) {
+                            proposal.setStudentName("Student " + proposalDto.getStudentId().toString().substring(0, 8));
+                        }
+                    }
+                    
+                    // Set teacher name
+                    if (proposalDto.getTeacherId() != null) {
+                        try {
+                            UserDto teacherUser = userService.getUserById(proposalDto.getTeacherId());
+                            proposal.setTeacherName(teacherUser.getFirstName() + " " + teacherUser.getLastName());
+                        } catch (Exception e) {
+                            proposal.setTeacherName("Teacher " + proposalDto.getTeacherId().toString().substring(0, 8));
+                        }
+                    }
+                    
+                    // Set department name
+                    if (proposalDto.getDepartmentId() != null) {
+                        try {
+                            DepartmentDto departmentDto = departmentService.getDepartmentById(proposalDto.getDepartmentId());
+                            proposal.setDepartmentName(departmentDto.getName());
+                        } catch (Exception e) {
+                            proposal.setDepartmentName("Unknown Department");
+                        }
+                    }
+                    
+                    // Set thesis information (though pending proposals won't have theses)
+                    proposal.setHasThesis(false);
+                }
+            }
+            
+            model.addAttribute("proposals", pendingProposals);
+            model.addAttribute("pageTitle", pageTitle);
+            model.addAttribute("pageDescription", pageDescription);
+
+            log.info("Pending proposals loaded for user: {} (role: {})", user.getEmail(), user.getRole());
+            return "dashboard/proposals/list";
+
+        } catch (Exception e) {
+            log.error("Error loading pending proposals", e);
+            model.addAttribute("error", "Failed to load pending proposals");
             return "dashboard/main";
         }
     }
@@ -503,13 +908,52 @@ public class ProposalController {
 
     @GetMapping("/create")
     @PreAuthorize("hasRole('STUDENT')")
-    public String showCreateProposalForm(Model model) {
+    public String showCreateProposalForm(Model model, RedirectAttributes redirectAttributes) {
         try {
             // Get authentication from SecurityContext
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             
             // Get current user's departments using UserViewService
             UUID currentUserId = userViewService.getCurrentUser(authentication).getId();
+            
+            // Check if student has any active (PENDING or APPROVED) proposals
+            List<ThesisProposalDto> existingProposals = thesisProposalService.getThesisProposalsByStudentId(currentUserId);
+            
+            // Check for active proposals (PENDING or APPROVED)
+            boolean hasActiveProposal = existingProposals.stream()
+                .anyMatch(p -> p.getStatus() == ThesisProposalStatus.PENDING || 
+                              p.getStatus() == ThesisProposalStatus.APPROVED);
+            
+            if (hasActiveProposal) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "You cannot create a new proposal while you have an active (pending or approved) proposal. Please wait until it's completed or rejected.");
+                return "redirect:/dashboard";
+            }
+            
+            // Additional check: if user has an approved proposal, check if associated thesis is still active
+            boolean hasActiveThesis = existingProposals.stream()
+                .filter(p -> p.getStatus() == ThesisProposalStatus.APPROVED)
+                .anyMatch(p -> {
+                    try {
+                        // Check if there's an associated thesis and its status
+                        ThesisDto thesis = thesisService.getThesisByProposalId(p.getId());
+                        if (thesis != null) {
+                            return thesis.getStatus() != ThesisStatus.DEFENDED && 
+                                   thesis.getStatus() != ThesisStatus.FAILED;
+                        }
+                        return false; // No thesis found, safe to create new proposal
+                    } catch (Exception e) {
+                        log.warn("Could not check thesis status for proposal {}: {}", p.getId(), e.getMessage());
+                        return false; // If we can't check, allow creation
+                    }
+                });
+            
+            if (hasActiveThesis) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "You cannot create a new proposal while you have an active thesis work. Please complete your current thesis first.");
+                return "redirect:/dashboard";
+            }
+            
             List<DepartmentDto> userDepartmentDtos = departmentService.getDepartmentsByUserId(currentUserId);
             List<DepartmentViewModel> departments = departmentMapper.toViewModels(userDepartmentDtos);
             
@@ -553,13 +997,49 @@ public class ProposalController {
 
             UUID currentUserId = userViewService.getCurrentUser(authentication).getId();
             
-            // Check if student already has a proposal with this teacher
+            // Check if student has any active (PENDING or APPROVED) proposals
             List<ThesisProposalDto> existingProposals = thesisProposalService.getThesisProposalsByStudentId(currentUserId);
-            boolean hasExistingProposalWithTeacher = existingProposals.stream()
-                .anyMatch(p -> p.getTeacherId().equals(UUID.fromString(form.getTeacherId())));
             
-            if (hasExistingProposalWithTeacher) {
-                bindingResult.rejectValue("teacherId", "error.teacherId", "You already have a proposal with this teacher");
+            // Check for active proposals (PENDING or APPROVED)
+            boolean hasActiveProposal = existingProposals.stream()
+                .anyMatch(p -> p.getStatus() == ThesisProposalStatus.PENDING || 
+                              p.getStatus() == ThesisProposalStatus.APPROVED);
+            
+            if (hasActiveProposal) {
+                bindingResult.rejectValue("teacherId", "error.activeProposal", 
+                    "You cannot create a new proposal while you have an active (pending or approved) proposal. Please wait until it's completed or rejected.");
+                
+                // Reload form data
+                List<DepartmentDto> userDepartments = departmentService.getDepartmentsByUserId(currentUserId);
+                List<TeacherDto> teachers = teacherService.getAllTeachers();
+                
+                model.addAttribute("departments", userDepartments);
+                model.addAttribute("teachers", teachers);
+                model.addAttribute("title", "Create Thesis Proposal");
+                return "dashboard/proposals/create";
+            }
+            
+            // Additional check: if user has an approved proposal, check if associated thesis is still active
+            boolean hasActiveThesis = existingProposals.stream()
+                .filter(p -> p.getStatus() == ThesisProposalStatus.APPROVED)
+                .anyMatch(p -> {
+                    try {
+                        // Check if there's an associated thesis and its status
+                        ThesisDto thesis = thesisService.getThesisByProposalId(p.getId());
+                        if (thesis != null) {
+                            return thesis.getStatus() != ThesisStatus.DEFENDED && 
+                                   thesis.getStatus() != ThesisStatus.FAILED;
+                        }
+                        return false; // No thesis found, safe to create new proposal
+                    } catch (Exception e) {
+                        log.warn("Could not check thesis status for proposal {}: {}", p.getId(), e.getMessage());
+                        return false; // If we can't check, allow creation
+                    }
+                });
+            
+            if (hasActiveThesis) {
+                bindingResult.rejectValue("teacherId", "error.activeThesis", 
+                    "You cannot create a new proposal while you have an active thesis work. Please complete your current thesis first.");
                 
                 // Reload form data
                 List<DepartmentDto> userDepartments = departmentService.getDepartmentsByUserId(currentUserId);
@@ -635,7 +1115,7 @@ public class ProposalController {
                 boolean existingThesis = thesisService.thesisExists(id);
                 if (existingThesis) {
                     log.info("Thesis already exists for proposal {}, redirecting to thesis page", id);
-                    return "redirect:/dashboard/" + id;
+                    return "redirect:/dashboard/thesis" + id;
                 }
             } catch (Exception e) {
                 // Thesis doesn't exist yet, which is what we want
@@ -649,12 +1129,315 @@ public class ProposalController {
                     createdThesis.getId(), id, user.getEmail());
             redirectAttributes.addFlashAttribute("success", "Thesis work started! You can now upload your document.");
             
-            return "redirect:/dashboard/" + createdThesis.getId();
+            return "redirect:/dashboard/thesis" + createdThesis.getId();
 
         } catch (Exception e) {
             log.error("Error creating thesis from proposal", e);
             redirectAttributes.addFlashAttribute("error", "Failed to start thesis work. Please try again.");
             return "redirect:/dashboard/proposals/" + id;
+        }
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public String viewAllProposals(Model model, 
+                                  @RequestParam(required = false) String sortBy,
+                                  @RequestParam(required = false) String filterStatus,
+                                  @RequestParam(required = false) String department,
+                                  Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to access all proposals");
+            return "redirect:/login";
+        }
+
+        try {
+            // Get current user information
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            model.addAttribute("user", user);
+
+            // Get all proposals from all departments
+            List<ThesisProposalDto> allProposals = thesisProposalService.getAllThesisProposals();
+            
+            // Apply filters if specified
+            if (filterStatus != null && !filterStatus.isEmpty() && !filterStatus.equals("all")) {
+                try {
+                    ThesisProposalStatus status = ThesisProposalStatus.valueOf(filterStatus);
+                    allProposals = allProposals.stream()
+                            .filter(proposal -> proposal.getStatus() == status)
+                            .toList();
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid status filter: {}", filterStatus);
+                }
+            }
+            
+            // Filter by department if specified
+            if (department != null && !department.isEmpty() && !department.equals("all")) {
+                try {
+                    UUID departmentId = UUID.fromString(department);
+                    allProposals = allProposals.stream()
+                            .filter(proposal -> proposal.getDepartmentId().equals(departmentId))
+                            .toList();
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid department filter: {}", department);
+                }
+            }
+
+            // Sort proposals
+            if (sortBy != null && !sortBy.isEmpty()) {
+                switch (sortBy) {
+                    case "title":
+                        allProposals = allProposals.stream()
+                                .sorted((p1, p2) -> p1.getTitle().compareToIgnoreCase(p2.getTitle()))
+                                .toList();
+                        break;
+                    case "status":
+                        allProposals = allProposals.stream()
+                                .sorted((p1, p2) -> p1.getStatus().toString().compareToIgnoreCase(p2.getStatus().toString()))
+                                .toList();
+                        break;
+                    case "created":
+                        allProposals = allProposals.stream()
+                                .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
+                                .toList();
+                        break;
+                    default:
+                        // Default sort by created date (newest first)
+                        allProposals = allProposals.stream()
+                                .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
+                                .toList();
+                }
+            } else {
+                // Default sort by created date (newest first)
+                allProposals = allProposals.stream()
+                        .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
+                        .toList();
+            }
+
+            // Convert to ViewModels
+            List<ThesisProposalViewModel> proposalViewModels = thesisProposalMapper.toViewModels(allProposals);
+            
+            // Populate additional information (student and teacher names)
+            for (int i = 0; i < proposalViewModels.size(); i++) {
+                ThesisProposalViewModel viewModel = proposalViewModels.get(i);
+                ThesisProposalDto dto = allProposals.get(i);
+                
+                try {
+                    // Get student name
+                    if (dto.getStudentId() != null) {
+                        UserDto student = userService.getUserById(dto.getStudentId());
+                        viewModel.setStudentName(student.getFirstName() + " " + student.getLastName());
+                    }
+                    
+                    // Get teacher name
+                    if (dto.getTeacherId() != null) {
+                        UserDto teacher = userService.getUserById(dto.getTeacherId());
+                        viewModel.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
+                    }
+                    
+                    // Get department name
+                    if (dto.getDepartmentId() != null) {
+                        DepartmentDto dept = departmentService.getDepartmentById(dto.getDepartmentId());
+                        viewModel.setDepartmentName(dept.getName());
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not load names for proposal {}: {}", viewModel.getId(), e.getMessage());
+                }
+            }
+
+            model.addAttribute("proposals", proposalViewModels);
+            
+            // Get all departments for the filter dropdown
+            List<DepartmentDto> departments = departmentService.getAllDepartments();
+            List<DepartmentViewModel> departmentViewModels = departmentMapper.toViewModels(departments);
+            model.addAttribute("departments", departmentViewModels);
+            
+            // Add filter parameters to maintain state
+            model.addAttribute("currentSortBy", sortBy != null ? sortBy : "created");
+            model.addAttribute("currentFilterStatus", filterStatus != null ? filterStatus : "all");
+            model.addAttribute("currentDepartment", department != null ? department : "all");
+            
+            // Add proposal status options for filtering
+            model.addAttribute("proposalStatuses", ThesisProposalStatus.values());
+            
+            log.info("All proposals page accessed by user: {} (Role: {})", user.getEmail(), user.getRole());
+            return "dashboard/proposals/all-proposals";
+
+        } catch (Exception e) {
+            log.error("Error loading all proposals page", e);
+            model.addAttribute("error", "Failed to load proposals. Please try again.");
+            return "dashboard/main";
+        }
+    }
+
+    @PostMapping("/all/{proposalId}/approve")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public String approveProposal(@PathVariable UUID proposalId,
+                                 RedirectAttributes redirectAttributes,
+                                 Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to approve proposal");
+            return "redirect:/login";
+        }
+
+        try {
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            
+            // Get the proposal
+            ThesisProposalDto proposal = thesisProposalService.getThesisProposalById(proposalId);
+            
+            // Check if proposal is in PENDING status
+            if (proposal.getStatus() != ThesisProposalStatus.PENDING) {
+                redirectAttributes.addFlashAttribute("error", "Only pending proposals can be approved");
+                return "redirect:/dashboard/proposals/all";
+            }
+            
+            // Update status to APPROVED
+            proposal.setStatus(ThesisProposalStatus.APPROVED);
+            thesisProposalService.updateThesisProposal(proposalId, proposal);
+            
+            log.info("Proposal {} approved by user: {}", proposalId, user.getEmail());
+            redirectAttributes.addFlashAttribute("success", "Proposal approved successfully!");
+            return "redirect:/dashboard/proposals/all";
+
+        } catch (Exception e) {
+            log.error("Error approving proposal {}", proposalId, e);
+            redirectAttributes.addFlashAttribute("error", "Failed to approve proposal. Please try again.");
+            return "redirect:/dashboard/proposals/all";
+        }
+    }
+
+    @PostMapping("/all/{proposalId}/reject")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public String rejectProposal(@PathVariable UUID proposalId,
+                                @RequestParam(required = false) String reason,
+                                RedirectAttributes redirectAttributes,
+                                Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to reject proposal");
+            return "redirect:/login";
+        }
+
+        try {
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            
+            // Get the proposal
+            ThesisProposalDto proposal = thesisProposalService.getThesisProposalById(proposalId);
+            
+            // Check if proposal is in PENDING status
+            if (proposal.getStatus() != ThesisProposalStatus.PENDING) {
+                redirectAttributes.addFlashAttribute("error", "Only pending proposals can be rejected");
+                return "redirect:/dashboard/proposals/all";
+            }
+            
+            // Update status to REJECTED
+            proposal.setStatus(ThesisProposalStatus.REJECTED);
+            
+            // Add rejection reason if provided (assuming there's a field for this)
+            // Note: You might need to add a rejectionReason field to ThesisProposalDto if it doesn't exist
+            
+            thesisProposalService.updateThesisProposal(proposalId, proposal);
+            
+            log.info("Proposal {} rejected by user: {} with reason: {}", proposalId, user.getEmail(), reason);
+            redirectAttributes.addFlashAttribute("success", "Proposal rejected successfully!");
+            return "redirect:/dashboard/proposals/all";
+
+        } catch (Exception e) {
+            log.error("Error rejecting proposal {}", proposalId, e);
+            redirectAttributes.addFlashAttribute("error", "Failed to reject proposal. Please try again.");
+            return "redirect:/dashboard/proposals/all";
+        }
+    }
+
+    @PostMapping("/pending/{proposalId}/approve")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public String approvePendingProposal(@PathVariable UUID proposalId,
+                                        RedirectAttributes redirectAttributes,
+                                        Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to approve proposal");
+            return "redirect:/login";
+        }
+
+        try {
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            UUID currentUserId = AuthenticationUtils.getCurrentUserId();
+            
+            // Get the proposal
+            ThesisProposalDto proposal = thesisProposalService.getThesisProposalById(proposalId);
+            
+            // Check if proposal is in PENDING status
+            if (proposal.getStatus() != ThesisProposalStatus.PENDING) {
+                redirectAttributes.addFlashAttribute("error", "Only pending proposals can be approved");
+                return "redirect:/dashboard/proposals/pending";
+            }
+            
+            // Check if teacher has permission to approve this proposal (either assigned teacher or admin)
+            if (user.getRole().contains("teacher") && !proposal.getTeacherId().equals(currentUserId)) {
+                redirectAttributes.addFlashAttribute("error", "You can only approve proposals assigned to you");
+                return "redirect:/dashboard/proposals/pending";
+            }
+            
+            // Update status to APPROVED
+            proposal.setStatus(ThesisProposalStatus.APPROVED);
+            thesisProposalService.updateThesisProposal(proposalId, proposal);
+            
+            log.info("Proposal {} approved by user: {}", proposalId, user.getEmail());
+            redirectAttributes.addFlashAttribute("success", "Proposal approved successfully!");
+            return "redirect:/dashboard/proposals/pending";
+
+        } catch (Exception e) {
+            log.error("Error approving proposal {}", proposalId, e);
+            redirectAttributes.addFlashAttribute("error", "Failed to approve proposal. Please try again.");
+            return "redirect:/dashboard/proposals/pending";
+        }
+    }
+
+    @PostMapping("/pending/{proposalId}/reject")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public String rejectPendingProposal(@PathVariable UUID proposalId,
+                                       @RequestParam(required = false) String reason,
+                                       RedirectAttributes redirectAttributes,
+                                       Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to reject proposal");
+            return "redirect:/login";
+        }
+
+        try {
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            UUID currentUserId = AuthenticationUtils.getCurrentUserId();
+            
+            // Get the proposal
+            ThesisProposalDto proposal = thesisProposalService.getThesisProposalById(proposalId);
+            
+            // Check if proposal is in PENDING status
+            if (proposal.getStatus() != ThesisProposalStatus.PENDING) {
+                redirectAttributes.addFlashAttribute("error", "Only pending proposals can be rejected");
+                return "redirect:/dashboard/proposals/pending";
+            }
+            
+            // Check if teacher has permission to reject this proposal (either assigned teacher or admin)
+            if (user.getRole().contains("teacher") && !proposal.getTeacherId().equals(currentUserId)) {
+                redirectAttributes.addFlashAttribute("error", "You can only reject proposals assigned to you");
+                return "redirect:/dashboard/proposals/pending";
+            }
+            
+            // Update status to REJECTED
+            proposal.setStatus(ThesisProposalStatus.REJECTED);
+            
+            // Add rejection reason if provided (you might need to add a rejectionReason field)
+            // proposal.setRejectionReason(reason);
+            
+            thesisProposalService.updateThesisProposal(proposalId, proposal);
+            
+            log.info("Proposal {} rejected by user: {} with reason: {}", proposalId, user.getEmail(), reason);
+            redirectAttributes.addFlashAttribute("success", "Proposal rejected successfully!");
+            return "redirect:/dashboard/proposals/pending";
+
+        } catch (Exception e) {
+            log.error("Error rejecting proposal {}", proposalId, e);
+            redirectAttributes.addFlashAttribute("error", "Failed to reject proposal. Please try again.");
+            return "redirect:/dashboard/proposals/pending";
         }
     }
 }

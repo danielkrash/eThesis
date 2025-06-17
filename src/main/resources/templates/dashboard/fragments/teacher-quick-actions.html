@@ -1,0 +1,36 @@
+<!-- Quick Actions for Teachers -->
+<div th:if="${user.role == 'teacher'}" class="row mt-5">
+    <div class="col">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a th:href="@{/dashboard/defences}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-calendar-event me-2"></i>Manage Defenses
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a th:href="@{/dashboard/grading}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-award me-2"></i>Grade Theses
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a th:href="@{/dashboard/proposals/my}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-file-earmark-text me-2"></i>My Proposals
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a th:href="@{/dashboard/proposals/create}" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-plus-circle me-2"></i>Create Proposal
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

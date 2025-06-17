@@ -1,6 +1,6 @@
 package com.uni.ethesis.web.view.model;
 
-import java.util.Set;
+import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -42,5 +42,5 @@ public class ThesisViewModel {
     private String createdAt;
     private String lastModifiedAt;
 
-    private Set<ThesisReviewViewModel> reviews;
+    private List<ThesisReviewViewModel> reviews;
 }

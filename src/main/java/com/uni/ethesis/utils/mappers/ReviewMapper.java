@@ -43,7 +43,17 @@ public interface ReviewMapper {
 
     @Named("conclusionToString")
     default String conclusionToString(com.uni.ethesis.enums.ReviewConclusion conclusion) {
-        return conclusion != null ? conclusion.toString() : null;
+        if (conclusion == null) {
+            return null;
+        }
+        switch (conclusion) {
+            case ACCEPTED:
+                return "ACCEPTED";
+            case REJECTED:
+                return "REJECTED";
+            default:
+                return conclusion.name();
+        }
     }
 
     @Named("offsetDateTimeToString")

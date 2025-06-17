@@ -43,6 +43,10 @@ public class ThesisProposalViewModel {
     private OffsetDateTime createdAt;
     private OffsetDateTime lastModifiedAt;
     
+    // Thesis information
+    private String thesisId;
+    private boolean hasThesis;
+    
     // Additional fields for display logic
     private boolean canEdit;
     private boolean canApply;

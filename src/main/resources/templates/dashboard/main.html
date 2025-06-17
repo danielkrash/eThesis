@@ -239,52 +239,52 @@
                     </div>
 
                     <!-- Available Proposals -->
-                    <div class="col-lg-6">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-search me-2"></i>Available Proposals
-                                </h5>
-                                <a th:href="@{/proposals/browse}" class="btn btn-sm btn-outline-primary">
-                                    Browse All
-                                </a>
-                            </div>
-                            <div class="card-body">
-                                <div th:if="${#lists.isEmpty(availableProposals)}" class="text-center py-4">
-                                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-                                    <h6 class="text-muted mt-3">No available proposals</h6>
-                                    <p class="text-muted">Check back later for new thesis proposals.</p>
-                                </div>
-                                
-                                <div th:unless="${#lists.isEmpty(availableProposals)}">
-                                    <div class="row g-3">
-                                        <div class="col-12" th:each="proposal, iterStat : ${availableProposals}" th:if="${iterStat.index < 3}">
-                                            <div class="border rounded p-3 bg-light">
-                                                <div class="d-flex justify-content-between align-items-start">
-                                                    <div class="flex-grow-1">
-                                                        <h6 class="fw-bold mb-2">
-                                                            <a th:href="@{/proposals/{id}(id=${proposal.id})}" 
-                                                               class="text-decoration-none" th:text="${proposal.title}">
-                                                                Proposal Title
-                                                            </a>
-                                                        </h6>
-                                                        <p class="text-muted small mb-2" th:text="${proposal.goal}">Goal description...</p>
-                                                        <small class="text-muted" th:if="${proposal.teacherName}">
-                                                            <i class="bi bi-person me-1"></i>
-                                                            Supervisor: <span th:text="${proposal.teacherName}">Teacher Name</span>
-                                                        </small>
-                                                    </div>
-                                                    <div class="ms-3">
-                                                        <span class="badge bg-success">Available</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<!--                    <div class="col-lg-6">-->
+<!--                        <div class="card border-0 shadow-sm h-100">-->
+<!--                            <div class="card-header bg-light d-flex justify-content-between align-items-center">-->
+<!--                                <h5 class="card-title mb-0">-->
+<!--                                    <i class="bi bi-search me-2"></i>Available Proposals-->
+<!--                                </h5>-->
+<!--                                <a th:href="@{/proposals/browse}" class="btn btn-sm btn-outline-primary">-->
+<!--                                    Browse All-->
+<!--                                </a>-->
+<!--                            </div>-->
+<!--                            <div class="card-body">-->
+<!--                                <div th:if="${#lists.isEmpty(availableProposals)}" class="text-center py-4">-->
+<!--                                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>-->
+<!--                                    <h6 class="text-muted mt-3">No available proposals</h6>-->
+<!--                                    <p class="text-muted">Check back later for new thesis proposals.</p>-->
+<!--                                </div>-->
+<!--                                -->
+<!--                                <div th:unless="${#lists.isEmpty(availableProposals)}">-->
+<!--                                    <div class="row g-3">-->
+<!--                                        <div class="col-12" th:each="proposal, iterStat : ${availableProposals}" th:if="${iterStat.index < 3}">-->
+<!--                                            <div class="border rounded p-3 bg-light">-->
+<!--                                                <div class="d-flex justify-content-between align-items-start">-->
+<!--                                                    <div class="flex-grow-1">-->
+<!--                                                        <h6 class="fw-bold mb-2">-->
+<!--                                                            <a th:href="@{/proposals/{id}(id=${proposal.id})}" -->
+<!--                                                               class="text-decoration-none" th:text="${proposal.title}">-->
+<!--                                                                Proposal Title-->
+<!--                                                            </a>-->
+<!--                                                        </h6>-->
+<!--                                                        <p class="text-muted small mb-2" th:text="${proposal.goal}">Goal description...</p>-->
+<!--                                                        <small class="text-muted" th:if="${proposal.teacherName}">-->
+<!--                                                            <i class="bi bi-person me-1"></i>-->
+<!--                                                            Supervisor: <span th:text="${proposal.teacherName}">Teacher Name</span>-->
+<!--                                                        </small>-->
+<!--                                                    </div>-->
+<!--                                                    <div class="ms-3">-->
+<!--                                                        <span class="badge bg-success">Available</span>-->
+<!--                                                    </div>-->
+<!--                                                </div>-->
+<!--                                            </div>-->
+<!--                                        </div>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
                 </div>
 
                 <!-- Teacher View - My Proposals and Student Applications -->
@@ -299,6 +299,9 @@
                             </div>
                             <div class="card-body">
                                 <div class="d-grid gap-3">
+                                    <a th:href="@{/dashboard/proposals}" class="btn btn-primary">
+                                        <i class="bi bi-list me-2"></i>All Proposals
+                                    </a>
                                     <a th:href="@{/dashboard/proposals/current}" class="btn btn-info">
                                         <i class="bi bi-clock-history me-2"></i>Current Proposals
                                         <span class="badge bg-light text-dark ms-2" th:text="${approvedCount ?: 0}">0</span>
@@ -310,9 +313,15 @@
                                         <i class="bi bi-exclamation-triangle me-2"></i>Needs Approving
                                         <span class="badge bg-light text-dark ms-2" th:text="${pendingCount ?: 0}">0</span>
                                     </a>
+                                    <a th:href="@{/dashboard/proposals/all}" class="btn btn-outline-warning">
+                                        <i class="bi bi-collection me-2"></i>All Departments
+                                    </a>
                                     <hr class="my-3">
                                     <a th:href="@{/dashboard/students}" class="btn btn-outline-success">
                                         <i class="bi bi-people me-2"></i>View Students
+                                    </a>
+                                    <a th:href="@{/dashboard/defences}" class="btn btn-outline-primary">
+                                        <i class="bi bi-shield-check me-2"></i>Defense Management
                                     </a>
                                 </div>
                             </div>
@@ -405,6 +414,68 @@
                 </div>
             </div>
 
+            <!-- Thesis Grading Card for Teachers -->
+            <div th:if="${user.role == 'teacher'}" class="row mt-4">
+                <div class="col-lg-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-award me-2"></i>Defense Sessions to Grade
+                            </h5>
+                            <a th:href="@{/dashboard/grading}" class="btn btn-sm btn-outline-primary">
+                                View All
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div th:if="${#lists.isEmpty(defenseSessions) or defenseSessions == null}" class="text-center py-4">
+                                <i class="bi bi-clipboard-check text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-2">No defense sessions pending your evaluation.</p>
+                            </div>
+                            
+                            <div th:unless="${#lists.isEmpty(defenseSessions) or defenseSessions == null}" class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date & Time</th>
+                                            <th>Student</th>
+                                            <th>Thesis Title</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="defenseSession : ${defenseSessions}" th:if="${defenseSession != null}">
+                                            <td>
+                                                <i class="bi bi-calendar3 me-1"></i>
+                                                <span th:text="${defenseSession.dateAndTime != null ? #temporals.format(defenseSession.dateAndTime, 'dd MMM yyyy HH:mm') : 'TBD'}">Date & Time</span>
+                                            </td>
+                                            <td>
+                                                <span th:text="${defenseSession.studentName}">Student Name</span>
+                                            </td>
+                                            <td>
+                                                <span th:text="${defenseSession.proposalTitle}">Thesis Title</span>
+                                            </td>
+                                            <td>
+                                                <span th:if="${defenseSession.graded}" class="badge bg-success">Graded</span>
+                                                <span th:unless="${defenseSession.graded}" class="badge bg-warning">Pending Grade</span>
+                                            </td>
+                                            <td>
+                                                <a th:href="@{/dashboard/grading/{id}(id=${defenseSession.id})}" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-pencil-square me-1"></i>Grade
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Teacher Dashboard Sections -->
+<!--            <div th:if="${user.role == 'teacher'}" th:replace="~{dashboard/fragments/teacher-dashboard :: div}"></div>-->
+
             <!-- Quick Actions for Students -->
             <div th:if="${user.role == 'student'}" class="row mt-5">
                 <div class="col">
@@ -416,11 +487,6 @@
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-3">
-                                    <a th:href="@{/proposals/browse}" class="btn btn-outline-primary w-100">
-                                        <i class="bi bi-search me-2"></i>Browse Available Proposals
-                                    </a>
-                                </div>
                                 <div class="col-md-3">
                                     <a th:href="@{/dashboard/proposals}" class="btn btn-outline-info w-100">
                                         <i class="bi bi-file-earmark-text me-2"></i>All My Proposals
@@ -453,6 +519,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Teacher Quick Actions -->
+            <div th:if="${user.role == 'teacher'}" th:replace="~{dashboard/fragments/teacher-quick-actions :: div}"></div>
 
             <!-- Welcome message for unknown roles -->
             <div th:if="${user.role != 'student' && user.role != 'teacher' && user.role != 'admin'}" class="row">

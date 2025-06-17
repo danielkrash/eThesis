@@ -136,7 +136,7 @@
                                                     </a>
                                                     <!-- Thesis work button for APPROVED proposals -->
                                                     <a th:if="${proposal.status == 'APPROVED' && pageTitle != 'Past Theses'}"
-                                                       th:href="@{/student/thesis}" 
+                                                       th:href="@{/dashboard/thesis/{id}(id=${proposal.id})}"
                                                        class="btn btn-sm btn-success flex-fill">
                                                         <i class="bi bi-book me-1"></i>Thesis Work
                                                     </a>

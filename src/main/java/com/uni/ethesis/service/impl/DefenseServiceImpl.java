@@ -114,4 +114,24 @@ public class DefenseServiceImpl implements DefenseService {
     public long countDefensesInPeriod(Date startDate, Date endDate) {
         return defenseRepository.countDefensesInPeriod(startDate, endDate);
     }
+
+    @Override
+    public List<DefenseDto> getDefensesByDepartmentId(UUID departmentId) {
+        return defenseRepository.findByDepartmentId(departmentId).stream()
+                .map(defenseMapper::defenseToDefenseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public DefenseDto createDefenseWithDepartments(DefenseDto defenseDto, List<UUID> departmentIds) {
+        Defense defense = defenseMapper.defenseDtoToDefense(defenseDto);
+        Defense savedDefense = defenseRepository.save(defense);
+        
+        // Create DepartmentDefense relationships
+        // This will be handled through the Defense entity's defenses collection
+        // The controller will need to manage the department associations
+        
+        return defenseMapper.defenseToDefenseDto(savedDefense);
+    }
 }

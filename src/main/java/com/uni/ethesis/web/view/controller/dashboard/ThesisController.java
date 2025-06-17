@@ -1,9 +1,8 @@
 package com.uni.ethesis.web.view.controller.dashboard;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,9 +32,9 @@ import com.uni.ethesis.service.ThesisService;
 import com.uni.ethesis.service.UserService;
 import com.uni.ethesis.service.UserViewService;
 import com.uni.ethesis.utils.AuthenticationUtils;
-import com.uni.ethesis.utils.mappers.ThesisMapper;
-import com.uni.ethesis.utils.mappers.ReviewMapper;
 import com.uni.ethesis.utils.mappers.CommentMapper;
+import com.uni.ethesis.utils.mappers.ReviewMapper;
+import com.uni.ethesis.utils.mappers.ThesisMapper;
 import com.uni.ethesis.web.view.model.CommentViewModel;
 import com.uni.ethesis.web.view.model.ThesisReviewViewModel;
 import com.uni.ethesis.web.view.model.ThesisViewModel;
@@ -46,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Controller
-@RequestMapping("/dashboard")
+@RequestMapping("/dashboard/thesis")
 @RequiredArgsConstructor
 public class ThesisController {
 
@@ -62,7 +61,7 @@ public class ThesisController {
     private final CommentService commentService;
 
     @GetMapping("/{thesisId}")
-    @PreAuthorize("hasRole('STUDENT') or hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     public String viewThesis(@PathVariable UUID thesisId, Model model, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) {
             log.warn("Unauthenticated user trying to access thesis view");
@@ -124,7 +123,7 @@ public class ThesisController {
             thesis.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
             
             // Get and populate reviews with comments
-            Set<ThesisReviewViewModel> reviewViewModels = new HashSet<>();
+            List<ThesisReviewViewModel> reviewViewModels = new ArrayList<>();
             try {
                 List<ReviewDto> reviews = reviewService.getReviewsByThesisId(thesisId);
                 for (ReviewDto reviewDto : reviews) {
@@ -141,7 +140,7 @@ public class ThesisController {
                     
                     // Get comments for this review
                     List<CommentDto> comments = commentService.getCommentsByReviewId(reviewDto.getId());
-                    Set<CommentViewModel> commentViewModels = new HashSet<>();
+                    List<CommentViewModel> commentViewModels = new ArrayList<>();
                     
                     for (CommentDto commentDto : comments) {
                         CommentViewModel commentViewModel = commentMapper.commentDtoToCommentViewModel(commentDto);
@@ -214,7 +213,7 @@ public class ThesisController {
             if (!proposalDto.getStudentId().equals(currentUserId)) {
                 log.warn("User {} does not own thesis {}", user.getEmail(), thesisId);
                 model.addAttribute("error", "You can only upload files for your own thesis");
-                return "redirect:/dashboard/" + thesisId;
+                return "redirect:/dashboard/thesis/" + thesisId;
             }
 
             ThesisViewModel thesis = thesisMapper.thesisDtoToViewModel(thesisDto);
@@ -233,7 +232,7 @@ public class ThesisController {
         } catch (Exception e) {
             log.error("Error loading thesis upload form", e);
             model.addAttribute("error", "Failed to load upload form");
-            return "redirect:/dashboard/" + thesisId;
+            return "redirect:/dashboard/thesis/" + thesisId;
         }
     }
 
@@ -252,13 +251,13 @@ public class ThesisController {
             // Validate file
             if (file.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "Please select a file to upload");
-                return "redirect:/dashboard/" + thesisId + "/upload";
+                return "redirect:/dashboard/thesis/" + thesisId + "/upload";
             }
 
             String contentType = file.getContentType();
             if (contentType == null || !contentType.equals("application/pdf")) {
                 redirectAttributes.addFlashAttribute("error", "Only PDF files are allowed");
-                return "redirect:/dashboard/" + thesisId + "/upload";
+                return "redirect:/dashboard/thesis/" + thesisId + "/upload";
             }
 
             // Get the thesis and check ownership
@@ -268,7 +267,7 @@ public class ThesisController {
             UUID currentUserId = AuthenticationUtils.getCurrentUserId();
             if (!proposalDto.getStudentId().equals(currentUserId)) {
                 redirectAttributes.addFlashAttribute("error", "You can only upload files for your own thesis");
-                return "redirect:/dashboard/" + thesisId;
+                return "redirect:/dashboard/thesis/" + thesisId;
             }
 
             // Store the file
@@ -296,16 +295,16 @@ public class ThesisController {
 
             log.info("Thesis PDF uploaded successfully for thesis {} by user: {}", thesisId, currentUserId);
             redirectAttributes.addFlashAttribute("success", "Thesis PDF uploaded successfully! Status reset to waiting for review.");
-            return "redirect:/dashboard/" + thesisId;
+            return "redirect:/dashboard/thesis/" + thesisId;
 
         } catch (IOException e) {
             log.error("Error uploading thesis PDF", e);
             redirectAttributes.addFlashAttribute("error", "Failed to upload file. Please try again.");
-            return "redirect:/dashboard/" + thesisId + "/upload";
+            return "redirect:/dashboard/thesis/" + thesisId + "/upload";
         } catch (Exception e) {
             log.error("Error processing thesis upload", e);
             redirectAttributes.addFlashAttribute("error", "An error occurred while uploading. Please try again.");
-            return "redirect:/dashboard/" + thesisId + "/upload";
+            return "redirect:/dashboard/thesis/" + thesisId + "/upload";
         }
     }
 
@@ -339,10 +338,27 @@ public class ThesisController {
             if (!canReview) {
                 log.warn("User {} does not have permission to review thesis {}", user.getEmail(), thesisId);
                 model.addAttribute("error", "You don't have permission to review this thesis");
-                return "redirect:/dashboard/" + thesisId;
+                return "redirect:/dashboard/thesis/" + thesisId;
             }
 
+            // Convert to ViewModel and populate additional information
             ThesisViewModel thesis = thesisMapper.thesisDtoToViewModel(thesisDto);
+            
+            // Populate additional information from proposal
+            thesis.setTitle(proposalDto.getTitle());
+            thesis.setGoal(proposalDto.getGoal());
+            thesis.setObjectives(proposalDto.getObjectives());
+            thesis.setTechnology(proposalDto.getTechnology());
+            thesis.setStudentId(proposalDto.getStudentId().toString());
+            thesis.setTeacherId(proposalDto.getTeacherId().toString());
+            thesis.setDepartmentId(proposalDto.getDepartmentId().toString());
+            
+            // Get student and teacher names
+            var student = userService.getUserById(proposalDto.getStudentId());
+            var teacher = userService.getUserById(proposalDto.getTeacherId());
+            thesis.setStudentName(student.getFirstName() + " " + student.getLastName());
+            thesis.setTeacherName(teacher.getFirstName() + " " + teacher.getLastName());
+            
             model.addAttribute("thesis", thesis);
 
             return "dashboard/thesis/review";
@@ -350,7 +366,186 @@ public class ThesisController {
         } catch (Exception e) {
             log.error("Error loading thesis review form", e);
             model.addAttribute("error", "Failed to load review form");
-            return "redirect:/dashboard/" + thesisId;
+            return "redirect:/dashboard/thesis/" + thesisId;
+        }
+    }
+
+    @PostMapping("/{thesisId}/review")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public String submitReview(@PathVariable UUID thesisId,
+                              @RequestParam String content,
+                              @RequestParam String conclusion,
+                              RedirectAttributes redirectAttributes,
+                              Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to submit review");
+            return "redirect:/login";
+        }
+
+        try {
+            // Get user information
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            UUID currentUserId = AuthenticationUtils.getCurrentUserId();
+
+            // Get the thesis and check permissions
+            ThesisDto thesisDto = thesisService.getThesisById(thesisId);
+            ThesisProposalDto proposalDto = thesisProposalService.getThesisProposalById(thesisDto.getProposalId());
+            
+            // Check if user has permission to review (supervisor teacher or admin)
+            boolean canReview = false;
+            
+            if (user.getRole().contains("admin")) {
+                canReview = true;
+            } else if (user.getRole().contains("teacher") && proposalDto.getTeacherId().equals(currentUserId)) {
+                canReview = true;
+            }
+
+            if (!canReview) {
+                log.warn("User {} does not have permission to review thesis {}", user.getEmail(), thesisId);
+                redirectAttributes.addFlashAttribute("error", "You don't have permission to review this thesis");
+                return "redirect:/dashboard/thesis/" + thesisId;
+            }
+
+            // Validate input
+            if (content == null || content.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Review content cannot be empty");
+                return "redirect:/dashboard/thesis/" + thesisId + "/review";
+            }
+
+            if (conclusion == null || (!conclusion.equals("ACCEPTED") && !conclusion.equals("REJECTED"))) {
+                redirectAttributes.addFlashAttribute("error", "Please select a valid conclusion (ACCEPTED or REJECTED)");
+                return "redirect:/dashboard/thesis/" + thesisId + "/review";
+            }
+
+            // Convert string to enum
+            ReviewConclusion reviewConclusion = ReviewConclusion.valueOf(conclusion);
+            
+            // Submit the review using the ReviewService
+            reviewService.submitReview(thesisId, currentUserId, content.trim(), reviewConclusion);
+            
+            // Update thesis status based on review conclusion
+            if (reviewConclusion == ReviewConclusion.ACCEPTED) {
+                thesisDto.setStatus(ThesisStatus.READY_FOR_DEFENSE);
+            } else {
+                thesisDto.setStatus(ThesisStatus.WAITING_FOR_REVIEW);
+            }
+            thesisService.updateThesis(thesisId, thesisDto);
+            
+            log.info("Review submitted for thesis {} by supervisor: {} with conclusion: {}", 
+                    thesisId, user.getEmail(), conclusion);
+            redirectAttributes.addFlashAttribute("success", "Review submitted successfully!");
+            return "redirect:/dashboard/thesis/" + thesisId;
+
+        } catch (Exception e) {
+            log.error("Error submitting review", e);
+            redirectAttributes.addFlashAttribute("error", "Failed to submit review. Please try again.");
+            return "redirect:/dashboard/thesis/" + thesisId + "/review";
+        }
+    }
+
+    @PostMapping("/{thesisId}/review/{reviewId}/comment")
+    @PreAuthorize("hasRole('STUDENT') or hasRole('TEACHER') or hasRole('ADMIN')")
+    public String addComment(@PathVariable UUID thesisId, 
+                           @PathVariable UUID reviewId,
+                           @RequestParam String content,
+                           RedirectAttributes redirectAttributes,
+                           Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to add comment");
+            return "redirect:/login";
+        }
+
+        try {
+            // Get user information
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            UUID currentUserId = AuthenticationUtils.getCurrentUserId();
+
+            // Get the thesis and check permissions
+            ThesisDto thesisDto = thesisService.getThesisById(thesisId);
+            ThesisProposalDto proposalDto = thesisProposalService.getThesisProposalById(thesisDto.getProposalId());
+            
+            // Check if user has permission to comment (student owner, supervisor teacher, or admin)
+            boolean canComment = false;
+            
+            if (user.getRole().contains("admin")) {
+                canComment = true;
+            } else if (user.getRole().contains("teacher") && proposalDto.getTeacherId().equals(currentUserId)) {
+                canComment = true;
+            } else if (user.getRole().contains("student") && proposalDto.getStudentId().equals(currentUserId)) {
+                canComment = true;
+            }
+
+            if (!canComment) {
+                log.warn("User {} does not have permission to comment on thesis {}", user.getEmail(), thesisId);
+                redirectAttributes.addFlashAttribute("error", "You don't have permission to comment on this thesis");
+                return "redirect:/dashboard/thesis/" + thesisId;
+            }
+
+            // Validate content
+            if (content == null || content.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Comment content cannot be empty");
+                return "redirect:/dashboard/thesis/" + thesisId;
+            }
+
+            // Create the comment
+            commentService.createComment(reviewId, currentUserId, content.trim());
+            
+            log.info("Comment added to review {} by user: {}", reviewId, user.getEmail());
+            redirectAttributes.addFlashAttribute("success", "Comment added successfully!");
+            return "redirect:/dashboard/thesis/" + thesisId;
+
+        } catch (Exception e) {
+            log.error("Error adding comment", e);
+            redirectAttributes.addFlashAttribute("error", "Failed to add comment. Please try again.");
+            return "redirect:/dashboard/thesis/" + thesisId;
+        }
+    }
+
+    @PostMapping("/{thesisId}/start-defense")
+    @PreAuthorize("hasRole('STUDENT')")
+    public String startDefense(@PathVariable UUID thesisId,
+                              RedirectAttributes redirectAttributes,
+                              Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            log.warn("Unauthenticated user trying to start defense");
+            return "redirect:/login";
+        }
+
+        try {
+            // Get user information
+            UserViewModel user = userViewService.getCurrentUserViewModel(auth);
+            UUID currentUserId = AuthenticationUtils.getCurrentUserId();
+
+            // Get the thesis and check permissions
+            ThesisDto thesisDto = thesisService.getThesisById(thesisId);
+            ThesisProposalDto proposalDto = thesisProposalService.getThesisProposalById(thesisDto.getProposalId());
+            
+            // Check if user owns this thesis
+            if (!proposalDto.getStudentId().equals(currentUserId)) {
+                log.warn("User {} does not own thesis {}", user.getEmail(), thesisId);
+                redirectAttributes.addFlashAttribute("error", "You can only start defense for your own thesis");
+                return "redirect:/dashboard/thesis/" + thesisId;
+            }
+
+            // Check if thesis is in the correct status
+            if (thesisDto.getStatus() != ThesisStatus.READY_FOR_DEFENSE) {
+                log.warn("Thesis {} is not ready for defense. Current status: {}", thesisId, thesisDto.getStatus());
+                redirectAttributes.addFlashAttribute("error", "Thesis is not ready for defense. Current status: " + thesisDto.getStatus());
+                return "redirect:/dashboard/thesis/" + thesisId;
+            }
+
+            // Update thesis status to WAITING_FOR_DEFENSE
+            thesisDto.setStatus(ThesisStatus.WAITING_FOR_DEFENSE);
+            thesisService.updateThesis(thesisId, thesisDto);
+            
+            log.info("Defense started for thesis {} by student: {}", thesisId, user.getEmail());
+            redirectAttributes.addFlashAttribute("success", "Defense process started successfully! Your thesis is now waiting for defense scheduling.");
+            return "redirect:/dashboard/thesis/" + thesisId;
+
+        } catch (Exception e) {
+            log.error("Error starting defense for thesis {}", thesisId, e);
+            redirectAttributes.addFlashAttribute("error", "Failed to start defense process. Please try again.");
+            return "redirect:/dashboard/thesis/" + thesisId;
         }
     }
 }

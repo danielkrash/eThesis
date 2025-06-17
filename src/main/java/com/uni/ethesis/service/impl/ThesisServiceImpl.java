@@ -363,6 +363,22 @@ public class ThesisServiceImpl implements ThesisService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ThesisDto> getThesesByStatus(ThesisStatus status) {
+        List<Thesis> theses = thesisRepository.findByStatus(status);
+        return theses.stream()
+                .map(thesisMapper::thesisToThesisDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ThesisDto> getThesesByStatusAndDepartment(ThesisStatus status, UUID departmentId) {
+        List<Thesis> theses = thesisRepository.findByStatusAndDepartmentId(status, departmentId);
+        return theses.stream()
+                .map(thesisMapper::thesisToThesisDto)
+                .collect(Collectors.toList());
+    }
+
     private boolean isPdfFile(MultipartFile file) {
         String contentType = file.getContentType();
         return "application/pdf".equals(contentType);

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <!-- Header -->
+    <header th:replace="~{fragments/layout :: header}"></header>
+    
+    <main class="container-fluid py-4">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}">
+                            <i class="bi bi-house me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard/thesis/{thesisId}(thesisId=${thesis.id})}">Thesis Work</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Submit Review</li>
+                </ol>
+            </nav>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <!-- Review Form Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">
+                                <i class="bi bi-pencil-square me-2"></i>Submit Review
+                            </h4>
+                            <small class="text-muted">
+                                As the supervising teacher, you can review and approve or reject this thesis work.
+                            </small>
+                        </div>
+                        <div class="card-body">
+                            <!-- Thesis Summary -->
+                            <div class="bg-light rounded p-3 mb-4">
+                                <h6 class="fw-bold mb-2">Thesis Overview</h6>
+                                <p class="mb-1"><strong>Title:</strong> <span th:text="${thesis.title}">Thesis Title</span></p>
+                                <p class="mb-1"><strong>Student:</strong> <span th:text="${thesis.studentName}">Student Name</span></p>
+                                <p class="mb-1"><strong>Status:</strong> 
+                                    <span class="badge rounded-pill"
+                                          th:classappend="${thesis.status == 'WAITING_FOR_REVIEW' ? 'bg-warning text-dark' : 
+                                                         (thesis.status == 'READY_FOR_DEFENSE' ? 'bg-success' : 'bg-secondary')}"
+                                          th:text="${thesis.status}">Status</span>
+                                </p>
+                                <div th:if="${thesis.pdfPath}">
+                                    <strong>Thesis Document:</strong>
+                                    <a th:href="@{/files/{filename}(filename=${thesis.pdfPath})}" 
+                                       target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>View PDF
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Review Form -->
+                            <form th:action="@{/dashboard/thesis/{thesisId}/review(thesisId=${thesis.id})}" method="post" id="reviewForm">
+                                <!-- Review Content -->
+                                <div class="mb-4">
+                                    <label for="content" class="form-label fw-bold">
+                                        <i class="bi bi-chat-text me-1"></i>Review Content *
+                                    </label>
+                                    <textarea id="content" name="content" class="form-control" rows="6" 
+                                              placeholder="Provide detailed feedback on the thesis work, including strengths, weaknesses, and recommendations..." 
+                                              required></textarea>
+                                    <div class="form-text">
+                                        Provide comprehensive feedback that will help the student understand your evaluation.
+                                    </div>
+                                </div>
+
+                                <!-- Conclusion Selection -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-check-circle me-1"></i>Review Conclusion *
+                                    </label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card border-success conclusion-option">
+                                                <div class="card-body text-center">
+                                                    <input type="radio" class="form-check-input me-2" id="accepted" 
+                                                           name="conclusion" value="ACCEPTED" required>
+                                                    <label for="accepted" class="form-check-label fw-bold text-success">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>ACCEPT
+                                                    </label>
+                                                    <p class="small text-muted mt-2 mb-0">
+                                                        The thesis meets the required standards and is ready for defense.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card border-danger conclusion-option">
+                                                <div class="card-body text-center">
+                                                    <input type="radio" class="form-check-input me-2" id="rejected" 
+                                                           name="conclusion" value="REJECTED" required>
+                                                    <label for="rejected" class="form-check-label fw-bold text-danger">
+                                                        <i class="bi bi-x-circle-fill me-1"></i>REJECT
+                                                    </label>
+                                                    <p class="small text-muted mt-2 mb-0">
+                                                        The thesis requires significant improvements before defense.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Form Actions -->
+                                <div class="d-flex justify-content-between">
+                                    <a th:href="@{/dashboard/thesis/{thesisId}(thesisId=${thesis.id})}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left me-1"></i>Back to Thesis
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-send me-1"></i>Submit Review
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer th:replace="~{fragments/layout :: footer}"></footer>
+    
+    <!-- Scripts -->
+    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/custom.js}"></script>
+    
+    <!-- Review Form Enhancement Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enhanced conclusion selection
+            const conclusionOptions = document.querySelectorAll('.conclusion-option');
+            const radioButtons = document.querySelectorAll('input[name="conclusion"]');
+            
+            conclusionOptions.forEach((option, index) => {
+                option.addEventListener('click', function() {
+                    radioButtons[index].checked = true;
+                    updateConclusionSelection();
+                });
+            });
+            
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', updateConclusionSelection);
+            });
+            
+            function updateConclusionSelection() {
+                conclusionOptions.forEach((option, index) => {
+                    if (radioButtons[index].checked) {
+                        option.classList.add('selected');
+                        option.style.backgroundColor = radioButtons[index].value === 'ACCEPTED' ? '#d1e7dd' : '#f8d7da';
+                    } else {
+                        option.classList.remove('selected');
+                        option.style.backgroundColor = '';
+                    }
+                });
+            }
+            
+            // Auto-expand textarea
+            const textarea = document.getElementById('content');
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.max(this.scrollHeight, 150) + 'px';
+            });
+            
+            // Form validation enhancement
+            const form = document.getElementById('reviewForm');
+            form.addEventListener('submit', function(e) {
+                const content = document.getElementById('content').value.trim();
+                const conclusion = document.querySelector('input[name="conclusion"]:checked');
+                
+                if (!content) {
+                    e.preventDefault();
+                    alert('Please provide review content.');
+                    document.getElementById('content').focus();
+                    return;
+                }
+                
+                if (!conclusion) {
+                    e.preventDefault();
+                    alert('Please select a conclusion (Accept or Reject).');
+                    return;
+                }
+                
+                if (content.length < 10) {
+                    e.preventDefault();
+                    alert('Please provide more detailed feedback (at least 10 characters).');
+                    document.getElementById('content').focus();
+                    return;
+                }
+                
+                // Confirmation dialog
+                const actionText = conclusion.value === 'ACCEPTED' ? 'accept' : 'reject';
+                if (!confirm(`Are you sure you want to ${actionText} this thesis?`)) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Add some CSS for better interaction
+            const style = document.createElement('style');
+            style.textContent = `
+                .conclusion-option {
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                .conclusion-option:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                .conclusion-option.selected {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                }
+                textarea {
+                    transition: height 0.2s ease;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>

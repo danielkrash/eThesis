@@ -14,12 +14,12 @@ import com.uni.ethesis.enums.ReviewConclusion;
 
 public interface ReviewRepository extends JpaRepository<Review, UUID>, JpaSpecificationExecutor<Review> {
     
-    // Find review by thesis ID
+    // Find review by thesis ID - ordered by creation date descending (newest first)
+    @Query("SELECT r FROM Review r WHERE r.thesis.id = :thesisId ORDER BY r.createdAt DESC")
+    List<Review> findByThesisId(@Param("thesisId") UUID thesisId);
     
     // Find all reviews by teacher
     List<Review> findByTeacherId(UUID teacherId);
-
-    List<Review> findByThesisId(UUID teacherId);
     
     // Find reviews by conclusion
     List<Review> findByConclusion(ReviewConclusion conclusion);

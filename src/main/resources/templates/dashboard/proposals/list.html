@@ -50,9 +50,9 @@
                                 <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
                                 <h5 class="text-muted mt-3">No proposals found</h5>
                                 <p class="text-muted">
-                                    <span th:if="${pageTitle == 'Current Proposals'}">You don't have any current proposals at the moment.</span>
-                                    <span th:if="${pageTitle == 'Past Proposals'}">You don't have any completed proposals yet.</span>
-                                    <span th:if="${pageTitle == 'Proposals Needing Approval'}">No proposals are currently awaiting your approval.</span>
+                                    <span th:if="${pageTitle == 'My Current Proposals' or pageTitle == 'Currently Supervised Proposals' or pageTitle == 'All Current Proposals'}">There are no current proposals at the moment.</span>
+                                    <span th:if="${pageTitle == 'Past Theses' or pageTitle == 'Past Supervised Theses' or pageTitle == 'All Past Theses'}">There are no completed theses yet.</span>
+                                    <span th:if="${pageTitle == 'Pending Proposals for Review' or pageTitle == 'All Pending Proposals'}">No proposals are currently awaiting review.</span>
                                 </p>
                             </div>
 
@@ -63,7 +63,10 @@
                                         <tr>
                                             <th scope="col">Title</th>
                                             <th scope="col">Goal</th>
-                                            <th scope="col">Student</th>
+                                            <th scope="col" th:if="${user.role == 'teacher'}">Student</th>
+                                            <th scope="col" th:if="${user.role == 'student'}">Teacher</th>
+                                            <th scope="col" th:if="${user.role == 'admin'}">Student</th>
+                                            <th scope="col" th:if="${user.role == 'admin'}">Teacher</th>
                                             <th scope="col">Status</th>
                                             <th scope="col">Created</th>
                                             <th scope="col">Actions</th>
@@ -82,9 +85,24 @@
                                                     Goal description
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td th:if="${user.role == 'teacher'}">
                                                 <span th:text="${proposal.studentName ?: 'Unassigned'}" class="text-muted">
                                                     Student Name
+                                                </span>
+                                            </td>
+                                            <td th:if="${user.role == 'student'}">
+                                                <span th:text="${proposal.teacherName ?: 'Unassigned'}" class="text-muted">
+                                                    Teacher Name
+                                                </span>
+                                            </td>
+                                            <td th:if="${user.role == 'admin'}">
+                                                <span th:text="${proposal.studentName ?: 'Unassigned'}" class="text-muted">
+                                                    Student Name
+                                                </span>
+                                            </td>
+                                            <td th:if="${user.role == 'admin'}">
+                                                <span th:text="${proposal.teacherName ?: 'Unassigned'}" class="text-muted">
+                                                    Teacher Name
                                                 </span>
                                             </td>
                                             <td>
@@ -101,16 +119,24 @@
                                                        class="btn btn-outline-primary" title="View Details">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    <button th:if="${pageTitle == 'Proposals Needing Approval'}" 
-                                                            type="button" class="btn btn-outline-success" 
-                                                            title="Approve Proposal">
-                                                        <i class="bi bi-check-circle"></i>
-                                                    </button>
-                                                    <button th:if="${pageTitle == 'Proposals Needing Approval'}" 
-                                                            type="button" class="btn btn-outline-danger" 
-                                                            title="Reject Proposal">
-                                                        <i class="bi bi-x-circle"></i>
-                                                    </button>
+                                                    
+                                                    <!-- Approve/Reject buttons for pending proposals -->
+                                                    <div th:if="${(pageTitle == 'Pending Proposals for Review' or pageTitle == 'All Pending Proposals') and proposal.status == 'PENDING'}">
+                                                        <form th:action="@{/dashboard/proposals/pending/{id}/approve(id=${proposal.id})}" 
+                                                              method="post" class="d-inline">
+                                                            <button type="submit" class="btn btn-outline-success" 
+                                                                    title="Approve Proposal"
+                                                                    onclick="return confirm('Are you sure you want to approve this proposal?')">
+                                                                <i class="bi bi-check-circle"></i>
+                                                            </button>
+                                                        </form>
+                                                        <button type="button" class="btn btn-outline-danger" 
+                                                                title="Reject Proposal"
+                                                                data-bs-toggle="modal" 
+                                                                th:data-bs-target="'#rejectModal' + ${proposal.id}">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -131,25 +157,67 @@
                                 <i class="bi bi-compass me-2"></i>Quick Navigation
                             </h6>
                             <div class="d-flex gap-2 flex-wrap">
+                                <a th:href="@{/dashboard/proposals}" 
+                                   class="btn btn-sm"
+                                   th:classappend="${#strings.contains(pageTitle, 'All') ? 'btn-primary' : 'btn-outline-primary'}">
+                                    <i class="bi bi-list me-1"></i>All Proposals
+                                </a>
                                 <a th:href="@{/dashboard/proposals/current}" 
                                    class="btn btn-sm"
-                                   th:classappend="${pageTitle == 'Current Proposals' ? 'btn-info' : 'btn-outline-info'}">
+                                   th:classappend="${#strings.contains(pageTitle, 'Current') ? 'btn-info' : 'btn-outline-info'}">
                                     <i class="bi bi-clock-history me-1"></i>Current
                                 </a>
                                 <a th:href="@{/dashboard/proposals/past}" 
                                    class="btn btn-sm"
-                                   th:classappend="${pageTitle == 'Past Proposals' ? 'btn-secondary' : 'btn-outline-secondary'}">
+                                   th:classappend="${#strings.contains(pageTitle, 'Past') ? 'btn-secondary' : 'btn-outline-secondary'}">
                                     <i class="bi bi-archive me-1"></i>Past
                                 </a>
                                 <a th:href="@{/dashboard/proposals/pending}" 
                                    class="btn btn-sm"
-                                   th:classappend="${pageTitle == 'Proposals Needing Approval' ? 'btn-warning' : 'btn-outline-warning'}">
+                                   th:classappend="${#strings.contains(pageTitle, 'Pending') ? 'btn-warning' : 'btn-outline-warning'}"
+                                   th:if="${user.role == 'teacher' or user.role == 'admin'}">
                                     <i class="bi bi-exclamation-triangle me-1"></i>Pending
                                 </a>
-                                <a th:href="@{/dashboard/students}" class="btn btn-sm btn-outline-success">
+                                <a th:href="@{/dashboard/students}" class="btn btn-sm btn-outline-success"
+                                   th:if="${user.role == 'teacher' or user.role == 'admin'}">
                                     <i class="bi bi-people me-1"></i>Students
                                 </a>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reject Modals for pending proposals -->
+            <div th:if="${pageTitle == 'Pending Proposals for Review' or pageTitle == 'All Pending Proposals'}">
+                <div th:each="proposal : ${proposals}" 
+                     th:if="${proposal.status == 'PENDING'}"
+                     class="modal fade" th:id="'rejectModal' + ${proposal.id}" tabindex="-1" 
+                     th:aria-labelledby="'rejectModalLabel' + ${proposal.id}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" th:id="'rejectModalLabel' + ${proposal.id}">Reject Proposal</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form th:action="@{/dashboard/proposals/pending/{id}/reject(id=${proposal.id})}" method="post">
+                                <div class="modal-body">
+                                    <p>Are you sure you want to reject this proposal?</p>
+                                    <p><strong>Title:</strong> <span th:text="${proposal.title}">Proposal Title</span></p>
+                                    <p><strong>Student:</strong> <span th:text="${proposal.studentName}">Student Name</span></p>
+                                    <div class="mb-3">
+                                        <label for="reason" class="form-label">Rejection Reason (Optional):</label>
+                                        <textarea name="reason" class="form-control" rows="3" 
+                                                 placeholder="Provide a reason for rejection..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-x-circle me-1"></i>Reject Proposal
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>

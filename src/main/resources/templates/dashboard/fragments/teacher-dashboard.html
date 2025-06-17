@@ -1,0 +1,120 @@
+<!-- Teacher Dashboard Sections -->
+<div th:if="${user.role == 'teacher'}" class="row mt-4">
+    <!-- Supervised Theses -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-journal-check me-2"></i>Supervised Theses
+                </h5>
+                <span class="badge bg-primary" th:text="${supervisedTheses != null ? supervisedTheses.size() : '0'}">0</span>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(supervisedTheses)}" class="text-center py-4">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No theses currently supervised.</p>
+                </div>
+
+                <div th:if="${not #lists.isEmpty(supervisedTheses)}">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item p-3" th:each="thesis : ${supervisedTheses}">
+                            <h6 class="mb-1" th:text="${thesis.title}">Thesis Title</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>
+                                    <span th:text="${thesis.studentName}">Student Name</span>
+                                </small>
+                                <span th:replace="~{fragments/components :: statusBadge(${thesis.status})}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theses Awaiting Review -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-hourglass-split me-2"></i>Awaiting Review
+                </h5>
+                <span class="badge bg-warning" th:text="${thesesAwaitingReview != null ? thesesAwaitingReview.size() : '0'}">0</span>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(thesesAwaitingReview)}" class="text-center py-4">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No theses awaiting your review.</p>
+                </div>
+
+                <div th:if="${not #lists.isEmpty(thesesAwaitingReview)}">
+                    <div class="list-group list-group-flush">
+                        <a th:each="thesis : ${thesesAwaitingReview}" 
+                           th:href="@{/dashboard/thesis/review/{id}(id=${thesis.id})}" 
+                           class="list-group-item list-group-item-action p-3">
+                            <h6 class="mb-1" th:text="${thesis.title}">Thesis Title</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-person me-1"></i>
+                                    <span th:text="${thesis.studentName}">Student Name</span>
+                                </small>
+                                <div>
+                                    <span class="badge bg-warning">Needs Review</span>
+                                    <i class="bi bi-arrow-right-circle ms-1"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ready for Defense -->
+<div th:if="${user.role == 'teacher'}" class="row mt-4">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-shield-check me-2"></i>Theses Ready for Defense
+                </h5>
+                <a th:href="@{/dashboard/defences}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-calendar-plus me-1"></i>Manage Defenses
+                </a>
+            </div>
+            <div class="card-body">
+                <div th:if="${#lists.isEmpty(thesesReadyForDefense)}" class="text-center py-4">
+                    <i class="bi bi-check2-all text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No theses ready for defense scheduling.</p>
+                </div>
+
+                <div th:unless="${#lists.isEmpty(thesesReadyForDefense)}" class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Thesis Title</th>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="thesis : ${thesesReadyForDefense}">
+                                <td th:text="${thesis.title}">Thesis Title</td>
+                                <td th:text="${thesis.studentName}">Student Name</td>
+                                <td><span th:replace="~{fragments/components :: statusBadge(${thesis.status})}"></span></td>
+                                <td>
+                                    <a th:href="@{/dashboard/defences}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-calendar-plus me-1"></i>Schedule Defense
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

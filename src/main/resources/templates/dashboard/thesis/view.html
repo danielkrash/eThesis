@@ -41,13 +41,44 @@
                                 <h4 class="card-title mb-2" th:text="${thesis.title}">Thesis Title</h4>
                                 <div class="d-flex align-items-center gap-3">
                                     <span class="badge rounded-pill fs-6"
-                                          th:classappend="${thesis.status == 'PENDING' ? 'bg-warning text-dark' : 
-                                                         (thesis.status == 'APPROVED' ? 'bg-success' : 
-                                                         (thesis.status == 'REJECTED' ? 'bg-danger' : 
-                                                         (thesis.status == 'DEFENDED' ? 'bg-primary' : 'bg-secondary')))}"
+                                          th:classappend="${thesis.status == 'WAITING_FOR_REVIEW' ? 'bg-warning text-dark' : 
+                                                         (thesis.status == 'READY_FOR_DEFENSE' ? 'bg-info' : 
+                                                         (thesis.status == 'WAITING_FOR_DEFENSE' ? 'bg-primary' : 
+                                                         (thesis.status == 'IN_DEFENSE_PROCESS' ? 'bg-secondary' : 
+                                                         (thesis.status == 'DEFENDED' ? 'bg-success' : 
+                                                         (thesis.status == 'FAILED' ? 'bg-danger' : 'bg-light text-dark')))))}"
                                           th:text="${thesis.status}">
                                         Status
                                     </span>
+                                    
+                                    <!-- Status explanation for students -->
+                                    <div th:if="${isOwner}" class="mt-2">
+                                        <small class="text-muted fst-italic" 
+                                               th:if="${thesis.status == 'WAITING_FOR_REVIEW'}">
+                                            <i class="bi bi-clock me-1"></i>Waiting for supervisor review
+                                        </small>
+                                        <small class="text-success fst-italic" 
+                                               th:if="${thesis.status == 'READY_FOR_DEFENSE'}">
+                                            <i class="bi bi-check-circle me-1"></i>Ready for defense - you can start the defense process
+                                        </small>
+                                        <small class="text-primary fst-italic" 
+                                               th:if="${thesis.status == 'WAITING_FOR_DEFENSE'}">
+                                            <i class="bi bi-hourglass-split me-1"></i>Waiting for defense scheduling
+                                        </small>
+                                        <small class="text-secondary fst-italic" 
+                                               th:if="${thesis.status == 'IN_DEFENSE_PROCESS'}">
+                                            <i class="bi bi-person-check me-1"></i>Defense is in progress
+                                        </small>
+                                        <small class="text-success fst-italic" 
+                                               th:if="${thesis.status == 'DEFENDED'}">
+                                            <i class="bi bi-trophy me-1"></i>Successfully defended!
+                                        </small>
+                                        <small class="text-danger fst-italic" 
+                                               th:if="${thesis.status == 'FAILED'}">
+                                            <i class="bi bi-x-circle me-1"></i>Defense was not successful
+                                        </small>
+                                    </div>
+                                    
                                     <small class="text-muted" th:if="${thesis.createdAt}">
                                         <i class="bi bi-calendar me-1"></i>
                                         Started: <span th:text="${thesis.createdAt}">Date</span>
@@ -57,19 +88,19 @@
                             <div class="text-end">
                                 <!-- Upload button for thesis owner -->
                                 <a th:if="${canUpload && (thesis.pdfPath == null || thesis.pdfPath.isEmpty())}"
-                                   th:href="@{/dashboard/{id}/upload(id=${thesis.id})}" 
+                                   th:href="@{/dashboard/thesis/{id}/upload(id=${thesis.id})}" 
                                    class="btn btn-success btn-sm me-2">
                                     <i class="bi bi-upload me-1"></i>Upload PDF
                                 </a>
                                 <!-- Replace PDF button -->
                                 <a th:if="${canUpload && thesis.pdfPath != null && !thesis.pdfPath.isEmpty()}"
-                                   th:href="@{/dashboard/{id}/upload(id=${thesis.id})}" 
+                                   th:href="@{/dashboard/thesis/{id}/upload(id=${thesis.id})}" 
                                    class="btn btn-warning btn-sm me-2">
                                     <i class="bi bi-arrow-repeat me-1"></i>Replace PDF
                                 </a>
                                 <!-- Review button for supervisors -->
                                 <a th:if="${canReview}"
-                                   th:href="@{/dashboard/{id}/review(id=${thesis.id})}" 
+                                   th:href="@{/dashboard/thesis/{id}/review(id=${thesis.id})}" 
                                    class="btn btn-primary btn-sm me-2">
                                     <i class="bi bi-clipboard-check me-1"></i>Add Review
                                 </a>
@@ -143,41 +174,112 @@
 
                     <!-- Reviews Section -->
                     <div th:if="${thesis.reviews != null && !thesis.reviews.isEmpty()}" class="card shadow-sm mb-4">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
                                 <i class="bi bi-chat-square-text me-2"></i>Reviews & Comments
+                                <span class="badge bg-secondary ms-2" th:text="${#lists.size(thesis.reviews)}">0</span>
                             </h5>
+                            <div th:if="${#lists.size(thesis.reviews) > 1}">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="toggleAllReviews">
+                                    <i class="bi bi-eye me-1"></i>Show All Reviews
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body">
-                            <div th:each="review : ${thesis.reviews}" class="border-bottom pb-3 mb-3 last:border-bottom-0 last:pb-0 last:mb-0">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <h6 class="mb-1" th:text="${review.reviewerName}">Reviewer Name</h6>
+                            <!-- Latest Review (Always Visible) -->
+                            <div th:each="review, reviewStat : ${thesis.reviews}" 
+                                 th:classappend="${reviewStat.index == 0 ? 'latest-review' : 'older-review'}"
+                                 th:style="${reviewStat.index > 0 ? 'display: none;' : ''}"
+                                 class="review-item border rounded p-3 mb-3">
+                                
+                                <!-- Review Header -->
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <h6 class="mb-0 fw-bold" th:text="${review.reviewerName}">Reviewer Name</h6>
+                                            <span th:if="${reviewStat.index == 0}" class="badge bg-primary text-white small">Latest</span>
+                                        </div>
                                         <small class="text-muted">
                                             <i class="bi bi-calendar me-1"></i>
                                             <span th:text="${review.createdAt}">Review Date</span>
+                                            <span th:if="${review.updatedAt != review.createdAt}" class="ms-2">
+                                                (Updated: <span th:text="${review.updatedAt}">Update Date</span>)
+                                            </span>
                                         </small>
                                     </div>
-                                    <span class="badge rounded-pill"
+                                    <span class="badge rounded-pill fs-6"
                                           th:classappend="${review.conclusion == 'ACCEPTED' ? 'bg-success' : 
                                                          (review.conclusion == 'REJECTED' ? 'bg-danger' : 'bg-secondary')}"
-                                          th:text="${review.conclusion}">
+                                          th:text="${review.conclusion == 'ACCEPTED' ? '✓ Accepted' : 
+                                                   (review.conclusion == 'REJECTED' ? '✗ Rejected' : review.conclusion)}">
                                         Status
                                     </span>
                                 </div>
-                                <div th:if="${review.content}" class="mt-2">
-                                    <p class="mb-0" th:text="${review.content}">Review content...</p>
+                                
+                                <!-- Review Content -->
+                                <div th:if="${review.content}" class="mb-3">
+                                    <div class="bg-light rounded p-3">
+                                        <p class="mb-0" th:text="${review.content}">Review content...</p>
+                                    </div>
                                 </div>
                                 
-                                <!-- Comments on this review -->
-                                <div th:if="${review.comments != null && !review.comments.isEmpty()}" class="mt-3 ps-3 border-start border-light">
-                                    <h6 class="mb-2 text-muted">Comments:</h6>
-                                    <div th:each="comment : ${review.comments}" class="mb-2">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <small class="fw-bold" th:text="${comment.commenterName}">Commenter Name</small>
-                                            <small class="text-muted" th:text="${comment.createdAt}">Comment Date</small>
+                                <!-- Comments Section -->
+                                <div class="comments-section">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 text-muted">
+                                            <i class="bi bi-chat-dots me-1"></i>
+                                            Comments 
+                                            <span class="badge bg-light text-dark ms-1" 
+                                                  th:text="${review.comments != null ? #lists.size(review.comments) : 0}">0</span>
+                                        </h6>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary toggle-comments" 
+                                                    th:attr="data-review-id=${review.id}">
+                                                <i class="bi bi-chevron-down me-1"></i>Show Comments
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary toggle-comment-form" 
+                                                    th:attr="data-review-id=${review.id}">
+                                                <i class="bi bi-chat-plus me-1"></i>Add Comment
+                                            </button>
                                         </div>
-                                        <p class="mb-0 small" th:text="${comment.content}">Comment content...</p>
+                                    </div>
+                                    
+                                    <!-- Comments List (Collapsible) -->
+                                    <div class="comments-list" th:attr="data-review-id=${review.id}" style="display: none;">
+                                        <div th:if="${review.comments != null && !review.comments.isEmpty()}" class="ps-3 border-start border-primary">
+                                            <div th:each="comment : ${review.comments}" class="comment-item bg-white border rounded p-2 mb-2">
+                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                    <small class="fw-bold text-primary" th:text="${comment.commenterName}">Commenter Name</small>
+                                                    <small class="text-muted" th:text="${comment.createdAt}">Comment Date</small>
+                                                </div>
+                                                <p class="mb-0 small" th:text="${comment.content}">Comment content...</p>
+                                            </div>
+                                        </div>
+                                        <div th:if="${review.comments == null || review.comments.isEmpty()}" class="ps-3 border-start border-light">
+                                            <p class="small text-muted mb-0 fst-italic">No comments yet. Be the first to comment!</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Add Comment Form (Collapsible) -->
+                                    <div class="add-comment-section mt-3">
+                                        <form th:action="@{/dashboard/thesis/{thesisId}/review/{reviewId}/comment(thesisId=${thesis.id}, reviewId=${review.id})}" 
+                                              method="post" class="add-comment-form" th:attr="data-review-id=${review.id}" style="display: none;">
+                                            <div class="bg-light rounded p-3">
+                                                <div class="mb-2">
+                                                    <label class="form-label small fw-bold">Your Comment:</label>
+                                                    <textarea name="content" class="form-control" rows="3" 
+                                                              placeholder="Share your thoughts on this review..." required></textarea>
+                                                </div>
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary cancel-comment">
+                                                        <i class="bi bi-x me-1"></i>Cancel
+                                                    </button>
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="bi bi-send me-1"></i>Post Comment
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -230,10 +332,31 @@
                                    class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-file-earmark-text me-1"></i>View Proposal
                                 </a>
+                                
+                                <!-- Start Defence Button for Students -->
+                                <form th:if="${isOwner && thesis.status == 'READY_FOR_DEFENSE'}" 
+                                      th:action="@{/dashboard/thesis/{thesisId}/start-defense(thesisId=${thesis.id})}" 
+                                      method="post" class="mb-0">
+                                    <button type="submit" class="btn btn-success btn-sm w-100" 
+                                            onclick="return confirm('Are you sure you want to start the defense process? This action cannot be undone.')">
+                                        <i class="bi bi-play-circle me-1"></i>Start Defence
+                                    </button>
+                                </form>
+                                
+                                <a th:if="${isSupervisor && (thesis.status == 'WAITING_FOR_REVIEW' || thesis.reviews == null || thesis.reviews.isEmpty())}" 
+                                   th:href="@{/dashboard/thesis/{thesisId}/review(thesisId=${thesis.id})}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="bi bi-pencil-square me-1"></i>Submit Review
+                                </a>
                                 <a th:if="${isSupervisor}" 
                                    th:href="@{/dashboard/proposals}" 
                                    class="btn btn-outline-info btn-sm">
                                     <i class="bi bi-list me-1"></i>My Supervised Proposals
+                                </a>
+                                <a th:if="${isSupervisor || isAdmin}" 
+                                   th:href="@{/dashboard/proposals/all}" 
+                                   class="btn btn-outline-warning btn-sm">
+                                    <i class="bi bi-collection me-1"></i>All Proposals
                                 </a>
                                 <a th:if="${isAdmin}" 
                                    th:href="@{/admin/theses}" 
@@ -254,5 +377,150 @@
     <!-- Scripts -->
     <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
     <script th:src="@{/js/custom.js}"></script>
+    
+    <!-- Enhanced Review & Comment Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Toggle All Reviews Visibility
+            const toggleAllButton = document.getElementById('toggleAllReviews');
+            if (toggleAllButton) {
+                toggleAllButton.addEventListener('click', function() {
+                    const olderReviews = document.querySelectorAll('.older-review');
+                    const isHidden = olderReviews[0] && olderReviews[0].style.display === 'none';
+                    
+                    olderReviews.forEach(review => {
+                        review.style.display = isHidden ? 'block' : 'none';
+                    });
+                    
+                    if (isHidden) {
+                        this.innerHTML = '<i class="bi bi-eye-slash me-1"></i>Hide Older Reviews';
+                        this.classList.remove('btn-outline-primary');
+                        this.classList.add('btn-outline-secondary');
+                    } else {
+                        this.innerHTML = '<i class="bi bi-eye me-1"></i>Show All Reviews';
+                        this.classList.remove('btn-outline-secondary');
+                        this.classList.add('btn-outline-primary');
+                    }
+                });
+            }
+            
+            // Toggle Comments Visibility
+            document.querySelectorAll('.toggle-comments').forEach(button => {
+                button.addEventListener('click', function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    const commentsList = document.querySelector(`.comments-list[data-review-id="${reviewId}"]`);
+                    const icon = this.querySelector('i');
+                    
+                    if (commentsList.style.display === 'none' || commentsList.style.display === '') {
+                        commentsList.style.display = 'block';
+                        icon.className = 'bi bi-chevron-up me-1';
+                        this.querySelector('.me-1').nextSibling.textContent = 'Hide Comments';
+                    } else {
+                        commentsList.style.display = 'none';
+                        icon.className = 'bi bi-chevron-down me-1';
+                        this.querySelector('.me-1').nextSibling.textContent = 'Show Comments';
+                    }
+                });
+            });
+            
+            // Toggle Comment Form Visibility
+            document.querySelectorAll('.toggle-comment-form').forEach(button => {
+                button.addEventListener('click', function() {
+                    const reviewId = this.getAttribute('data-review-id');
+                    const form = document.querySelector(`.add-comment-form[data-review-id="${reviewId}"]`);
+                    const icon = this.querySelector('i');
+                    
+                    if (form.style.display === 'none' || form.style.display === '') {
+                        form.style.display = 'block';
+                        icon.className = 'bi bi-x me-1';
+                        this.querySelector('.me-1').nextSibling.textContent = 'Cancel';
+                        this.classList.remove('btn-outline-primary');
+                        this.classList.add('btn-outline-danger');
+                        
+                        // Focus on textarea
+                        const textarea = form.querySelector('textarea');
+                        if (textarea) {
+                            setTimeout(() => textarea.focus(), 100);
+                        }
+                    } else {
+                        form.style.display = 'none';
+                        icon.className = 'bi bi-chat-plus me-1';
+                        this.querySelector('.me-1').nextSibling.textContent = 'Add Comment';
+                        this.classList.remove('btn-outline-danger');
+                        this.classList.add('btn-outline-primary');
+                        
+                        // Clear the form
+                        const textarea = form.querySelector('textarea');
+                        if (textarea) {
+                            textarea.value = '';
+                        }
+                    }
+                });
+            });
+
+            // Cancel Comment Form
+            document.querySelectorAll('.cancel-comment').forEach(button => {
+                button.addEventListener('click', function() {
+                    const form = this.closest('.add-comment-form');
+                    const reviewId = form.getAttribute('data-review-id');
+                    const toggleButton = document.querySelector(`.toggle-comment-form[data-review-id="${reviewId}"]`);
+                    
+                    form.style.display = 'none';
+                    
+                    // Clear the form
+                    const textarea = form.querySelector('textarea');
+                    if (textarea) {
+                        textarea.value = '';
+                    }
+                    
+                    // Reset toggle button
+                    const icon = toggleButton.querySelector('i');
+                    icon.className = 'bi bi-chat-plus me-1';
+                    toggleButton.querySelector('.me-1').nextSibling.textContent = 'Add Comment';
+                    toggleButton.classList.remove('btn-outline-danger');
+                    toggleButton.classList.add('btn-outline-primary');
+                });
+            });
+            
+            // Auto-expand textarea on focus
+            document.querySelectorAll('.add-comment-form textarea').forEach(textarea => {
+                textarea.addEventListener('focus', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.max(this.scrollHeight, 100) + 'px';
+                });
+                
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.max(this.scrollHeight, 100) + 'px';
+                });
+            });
+            
+            // Smooth animations
+            const style = document.createElement('style');
+            style.textContent = `
+                .review-item {
+                    transition: all 0.3s ease;
+                }
+                .comments-list, .add-comment-form {
+                    transition: all 0.3s ease;
+                }
+                .comment-item {
+                    transition: all 0.2s ease;
+                }
+                .comment-item:hover {
+                    background-color: #f8f9fa !important;
+                    transform: translateX(5px);
+                }
+                .btn {
+                    transition: all 0.2s ease;
+                }
+                textarea {
+                    transition: height 0.2s ease;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
 </body>
 </html>

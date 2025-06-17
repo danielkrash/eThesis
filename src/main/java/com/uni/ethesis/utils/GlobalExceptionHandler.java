@@ -44,26 +44,7 @@ import com.uni.ethesis.exceptions.ThesisProposalNotFoundException;
 import com.uni.ethesis.exceptions.UnauthorizedCommentException;
 import com.uni.ethesis.exceptions.UserNotFoundException;
 
-/**
- * Global Exception Handler for the eThesis application.
- * 
- * This controller advice handles all exceptions thrown in the application and maps them
- * to appropriate HTTP status codes:
- * 
- * - 404 NOT FOUND: Resource not found exceptions (UserNotFoundException, etc.)
- * - 403 FORBIDDEN: Access denied exceptions (AccessDeniedException, etc.)
- * - 401 UNAUTHORIZED: Authentication required exceptions
- * - 400 BAD REQUEST: Invalid request parameters
- * - 405 METHOD NOT ALLOWED: HTTP method not supported
- * - 409 CONFLICT: Resource conflicts (AppointmentConflictException, etc.)
- * - 422 UNPROCESSABLE ENTITY: Request cannot be processed (FileUploadException, etc.)
- * - 500 INTERNAL SERVER ERROR: Unexpected server errors
- * 
- * Each exception generates a unique error ID for tracking and logs appropriate
- * information based on the error severity.
- * 
- * @author System
- */
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -72,7 +53,6 @@ public class GlobalExceptionHandler {
     @Value("${app.debug.detailed-errors:false}")
     private boolean showDetailedErrors;
 
-    // ====== 404 NOT FOUND EXCEPTIONS ======
     
     @ExceptionHandler({
         ResourceNotFoundException.class,
@@ -93,8 +73,6 @@ public class GlobalExceptionHandler {
     public Object handleNotFoundExceptions(Exception ex, WebRequest request) {
         return buildErrorResponse(ex, request, HttpStatus.NOT_FOUND, "The requested resource was not found");
     }
-
-    // ====== 403 FORBIDDEN / UNAUTHORIZED EXCEPTIONS ======
     
     @ExceptionHandler({
         AccessDeniedException.class,
@@ -103,8 +81,6 @@ public class GlobalExceptionHandler {
     public Object handleForbiddenExceptions(Exception ex, WebRequest request) {
         return buildErrorResponse(ex, request, HttpStatus.FORBIDDEN, "Access denied");
     }
-
-    // ====== 401 UNAUTHORIZED EXCEPTIONS ======
     
     @ExceptionHandler({
         AuthenticationException.class,
@@ -114,7 +90,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, request, HttpStatus.UNAUTHORIZED, "Authentication required");
     }
 
-    // ====== 400 BAD REQUEST EXCEPTIONS ======
     
     @ExceptionHandler({
         MethodArgumentNotValidException.class,
@@ -127,14 +102,12 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, request, HttpStatus.BAD_REQUEST, "Invalid request parameters");
     }
 
-    // ====== 405 METHOD NOT ALLOWED EXCEPTIONS ======
     
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public Object handleMethodNotAllowedExceptions(Exception ex, WebRequest request) {
         return buildErrorResponse(ex, request, HttpStatus.METHOD_NOT_ALLOWED, "HTTP method not supported");
     }
 
-    // ====== 409 CONFLICT EXCEPTIONS ======
     
     @ExceptionHandler({
         AppointmentConflictException.class,
@@ -145,7 +118,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, request, HttpStatus.CONFLICT, "Resource conflict");
     }
 
-    // ====== 422 UNPROCESSABLE ENTITY EXCEPTIONS ======
     
     @ExceptionHandler({
         FileUploadException.class
@@ -154,7 +126,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, request, HttpStatus.UNPROCESSABLE_ENTITY, "Request cannot be processed");
     }
 
-    // ====== 500 INTERNAL SERVER ERROR EXCEPTIONS ======
     
     @ExceptionHandler({
         ServiceException.class,
@@ -165,7 +136,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
     }
 
-    // ====== HELPER METHOD TO BUILD ERROR RESPONSES ======
     
     private Object buildErrorResponse(Exception ex, WebRequest request, HttpStatus status, String defaultMessage) {
         // Generate unique error ID for tracking

@@ -1,6 +1,6 @@
 package com.uni.ethesis.web.view.model;
 
-import java.util.Set;
+import java.util.List;
 
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +16,5 @@ public class ThesisReviewViewModel {
     private String reviewerName;
     private String createdAt;
     private String updatedAt;
-    private Set<CommentViewModel> comments;
+    private List<CommentViewModel> comments;
 }
